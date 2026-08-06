@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AlphaEdge — AI Stock Intelligence</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://js.puter.com/v2/"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg-deep: #07080c; --bg-base: #0c0e14; --bg-card: #12141c; --bg-elevated: #1a1d27;
+    --border: rgba(255,255,255,0.06); --border-strong: rgba(255,255,255,0.12);
+    --text-primary: #f5f6f8; --text-secondary: #a8acb8; --text-tertiary: #6b7180;
+    --emerald: #34d399; --emerald-bright: #10b981; --rose: #fb7185; --rose-bright: #f43f5e;
+    --amber: #fbbf24; --cyan: #22d3ee;
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg-deep); color: var(--text-primary); }
+  body { font-family: 'Manrope', system-ui, sans-serif; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+  .font-display { font-family: 'Space Grotesk', sans-serif; }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+  .app-bg {
+    background: radial-gradient(ellipse 80% 50% at 15% -5%, rgba(16,185,129,0.10), transparent 60%),
+                radial-gradient(ellipse 60% 50% at 95% 100%, rgba(244,63,94,0.05), transparent 60%),
+                radial-gradient(ellipse 40% 30% at 50% 50%, rgba(34,211,238,0.03), transparent 70%),
+                var(--bg-deep);
+  }
+  .card { background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent), var(--bg-card); border: 1px solid var(--border); border-radius: 16px; }
+  .nav-item { transition: all .15s ease; position: relative; }
+  .nav-item.active { background: linear-gradient(90deg, rgba(52,211,153,0.10), transparent); color: var(--emerald); }
+  .nav-item.active::before { content:''; position:absolute; left:0; top:8px; bottom:8px; width:2px; background: var(--emerald); border-radius: 0 2px 2px 0; }
+  .nav-item:not(.active):hover { background: rgba(255,255,255,0.03); color: var(--text-primary); }
+  .typing-dot { animation: typing 1.4s infinite ease-in-out; }
+  .typing-dot:nth-child(2) { animation-delay: .2s; }
+  .typing-dot:nth-child(3) { animation-delay: .4s; }
+  @keyframes typing { 0%,60%,100%{transform:translateY(0);opacity:.4} 30%{transform:translateY(-5px);opacity:1} }
+  .pulse-dot { animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(52,211,153,.6)} 50%{opacity:.7;box-shadow:0 0 0 6px rgba(52,211,153,0)} }
+  .ticker-tape { animation: ticker 120s linear infinite; }
+  @keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+  .slide-up { animation: slideUp .35s cubic-bezier(.16,1,.3,1); }
+  @keyframes slideUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .msg-enter { animation: msgEnter .35s cubic-bezier(.16,1,.3,1); }
+  @keyframes msgEnter { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+  .signal-strong-buy { background: rgba(16,185,129,.15); color:#34d399; border:1px solid rgba(16,185,129,.3); }
+  .signal-buy { background: rgba(52,211,153,.10); color:#6ee7b7; border:1px solid rgba(52,211,153,.22); }
+  .signal-hold { background: rgba(251,191,36,.12); color:#fcd34d; border:1px solid rgba(251,191,36,.25); }
+  .signal-sell { background: rgba(251,113,133,.10); color:#fda4af; border:1px solid rgba(251,113,133,.22); }
+  .signal-strong-sell { background: rgba(244,63,94,.15); color:#fb7185; border:1px solid rgba(244,63,94,.3); }
+  .glass { background: rgba(12,14,20,.75); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  .chart-svg text { fill: var(--text-tertiary); font-family: 'JetBrains Mono', monospace; }
+  .view { display: none; }
+  .view.active { display: block; animation: slideUp .3s cubic-bezier(.16,1,.3,1); }
+  .hover-lift { transition: transform .2s, border-color .2s; }
+  .hover-lift:hover { transform: translateY(-2px); border-color: var(--border-strong); }
+  .btn-glow { box-shadow: 0 0 0 0 rgba(52,211,153,.4); transition: box-shadow .3s; }
+  .btn-glow:hover { box-shadow: 0 0 24px 0 rgba(52,211,153,.35); }
+  .chat-content { line-height: 1.6; }
+  .chat-content strong { color: #f5f6f8; font-weight: 600; }
+  .chat-content ul { list-style: disc; padding-left: 1.25rem; margin: .5rem 0; }
+  .chat-content li { margin: .25rem 0; }
+  .chat-content p { margin: .5rem 0; }
+  .chat-content h4 { color: #34d399; font-weight: 600; margin: .75rem 0 .25rem; font-size: 1.1rem; }
+  .stream-cursor::after { content: '▋'; color: #34d399; animation: blink 1s steps(2) infinite; margin-left: 2px; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .glow-emerald { box-shadow: 0 0 40px -10px rgba(52,211,153,.4); }
+  .scrollbar-thin::-webkit-scrollbar { width: 4px; }
+  @media (max-width: 767px) {
+    .sidebar { transform: translateX(-100%); transition: transform .3s ease; }
+    .sidebar.open { transform: translateX(0); }
+    main { margin-left: 0 !important; }
+  }
+  .checkbox-emerald { accent-color: #10b981; }
+  .dashboard-card { cursor: pointer; transition: all .2s; }
+  .dashboard-card:hover { transform: translateY(-2px); border-color: var(--border-strong); }
+  .dashboard-card.active-card { border-color: rgba(52,211,153,0.5); background: rgba(52,211,153,0.05); }
+  .tf-btn { transition: all .15s; }
+  .tf-btn.active { background: rgba(52,211,153,0.15); color: #34d399; font-weight: 600; }
+  .zoom-btn { transition: all .15s; }
+  .zoom-btn:hover { background: rgba(52,211,153,0.15); color: #34d399; }
+</style>
+</head>
+<body class="app-bg">
+
+  <aside class="sidebar border-r border-[var(--border)] bg-[var(--bg-base)]/70 backdrop-blur-xl flex flex-col" style="position: fixed; top: 0; left: 0; width: 260px; height: 100vh; overflow-y: auto; z-index: 50;">
+    <div class="p-5 border-b border-[var(--border)]">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+          <i data-lucide="activity" class="w-5 h-5 text-black" stroke-width="2.5"></i>
+        </div>
+        <div>
+          <div class="font-display font-bold text-[17px] tracking-tight">AlphaEdge</div>
+          <div class="text-[10px] text-[var(--text-tertiary)] uppercase tracking-[0.18em]">AI Equity Intel</div>
+        </div>
+      </div>
+    </div>
+    <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+      <div class="text-[10px] uppercase tracking-[0.18em] text-[var(--text-tertiary)] px-3 py-2">Workspace</div>
+      <button class="nav-item active w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium" data-view="dashboard" onclick="switchView('dashboard')">
+        <i data-lucide="layout-dashboard" class="w-[18px] h-[18px]"></i> Dashboard
+      </button>
+      <button class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[var(--text-secondary)]" data-view="screener" onclick="switchView('screener')">
+        <i data-lucide="filter" class="w-[18px] h-[18px]"></i> Stock Screener
+        <span id="watchlistBadge" class="ml-auto text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded font-semibold hidden">0</span>
+      </button>
+      <button class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[var(--text-secondary)]" data-view="chat" onclick="switchView('chat')">
+        <i data-lucide="message-square-text" class="w-[18px] h-[18px]"></i> Research Universe
+        <span class="ml-auto text-[10px] bg-emerald-500/15 text-emerald-400 px-1.5 py-0.5 rounded font-semibold">AI</span>
+      </button>
+      <button class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[var(--text-secondary)]" data-view="pricing" onclick="switchView('pricing')">
+        <i data-lucide="credit-card" class="w-[18px] h-[18px]"></i> Pricing Plans
+      </button>
+    </nav>
+    <div class="p-3">
+      <div class="rounded-xl p-4 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20 relative overflow-hidden">
+        <div class="absolute -top-6 -right-6 w-20 h-20 bg-emerald-500/10 rounded-full blur-2xl"></div>
+        <div class="relative">
+          <div class="flex items-center gap-2 mb-2"><i data-lucide="sparkles" class="w-4 h-4 text-emerald-400"></i><span class="text-xs font-semibold">Upgrade to Pro</span></div>
+          <p class="text-[11px] text-[var(--text-secondary)] mb-3 leading-relaxed">Unlimited AI research, real-time alerts, institutional data.</p>
+          <button onclick="switchView('pricing')" class="w-full text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-black py-2 rounded-lg transition-colors">Upgrade Now</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="flex-1 min-w-0" style="margin-left: 260px;">
+    <nav class="sticky top-0 z-40 glass border-b border-[var(--border)]">
+      <div class="flex items-center justify-between px-4 lg:px-6 h-14">
+        <div class="flex items-center gap-2">
+          <button class="md:hidden text-[var(--text-secondary)] p-1.5 rounded hover:bg-white/5" onclick="toggleSidebar()">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+          <div class="font-display font-bold text-sm tracking-wide hidden md:block text-[var(--text-secondary)]">AlphaEdge Terminal</div>
+        </div>
+        <div class="flex-1 max-w-md mx-4 relative flex items-center">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 text-[var(--text-tertiary)] pointer-events-none"></i>
+          <input id="globalSearch" type="text" placeholder="Search ticker (e.g., AAPL, TSLA, GOOGL)" class="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-lg pl-10 pr-10 py-2 text-sm placeholder-[var(--text-tertiary)] focus:outline-none focus:border-emerald-500/40 focus:bg-[var(--bg-card)]" onkeydown="handleSearchKey(event)" />
+          <button onclick="handleSearch()" class="absolute right-2 p-1 text-[var(--text-secondary)] hover:text-emerald-400">
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+          <span id="searchError" class="hidden absolute top-full mt-1 left-0 text-xs text-rose-400 bg-rose-500/10 px-2 py-1 rounded">Ticker not found. Try AAPL, MSFT, NVDA, GOOGL, AMZN, META, TSLA, JPM, V, NFLX.</span>
+        </div>
+        <div class="hidden md:flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-elevated)] rounded-lg border border-[var(--border)]">
+          <div class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></div>
+          <span class="text-xs text-[var(--text-secondary)]">Markets Open</span>
+          <span class="text-xs text-[var(--text-tertiary)] font-mono" id="liveTime">--:--:--</span>
+        </div>
+        <div class="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg ml-2">
+          <i data-lucide="cpu" class="w-4 h-4 text-emerald-400"></i>
+          <span class="text-xs text-emerald-400 font-semibold hidden sm:inline">Live Data</span>
+        </div>
+      </div>
+      <div class="border-t border-[var(--border)] overflow-hidden h-9 flex items-center bg-[var(--bg-base)]/60">
+        <div class="ticker-tape flex items-center gap-6 whitespace-nowrap px-4" id="tickerTape"></div>
+      </div>
+    </nav>
+
+    <div class="p-4 lg:p-6">
+      <!-- DASHBOARD -->
+      <div class="view active" id="view-dashboard">
+        <div class="flex items-end justify-between mb-6 flex-wrap gap-4">
+          <div>
+            <h1 class="font-display text-2xl lg:text-3xl font-bold tracking-tight">Market Dashboard</h1>
+            <p class="text-sm text-[var(--text-secondary)] mt-1 flex items-center gap-2">
+              <span class="inline-block w-1.5 h-1.5 bg-emerald-400 rounded-full pulse-dot"></span> Live AI-curated intelligence • Tracking 10 Equities
+            </p>
+          </div>
+          <button onclick="switchView('chat')" class="px-3 py-2 bg-emerald-500 hover:bg-emerald-400 text-black rounded-lg text-sm font-semibold flex items-center gap-2 btn-glow">
+            <i data-lucide="sparkles" class="w-4 h-4"></i> Ask AI
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6">
+          <div class="card p-4 hover-lift dashboard-card" id="card-spy" onclick="selectIndexChart('SPY', 5247.18, 'S&P 500 Index')">
+            <div class="flex items-center justify-between mb-2"><span class="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider">S&P 500</span><i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i></div>
+            <div class="font-mono text-xl font-bold" data-live-idx="sp500">5,247.18</div>
+            <div class="flex items-center gap-2 mt-1"><span class="text-xs text-emerald-400 font-mono" data-live-idx-change="sp500">+38.42</span></div>
+            <div class="mt-3 h-8" id="spark-sp500"></div>
+          </div>
+          <div class="card p-4 hover-lift dashboard-card" id="card-qqq" onclick="selectIndexChart('QQQ', 16832.91, 'Nasdaq Index')">
+            <div class="flex items-center justify-between mb-2"><span class="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider">Nasdaq</span><i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i></div>
+            <div class="font-mono text-xl font-bold" data-live-idx="nasdaq">16,832.91</div>
+            <div class="flex items-center gap-2 mt-1"><span class="text-xs text-emerald-400 font-mono" data-live-idx-change="nasdaq">+184.67</span></div>
+            <div class="mt-3 h-8" id="spark-nasdaq"></div>
+          </div>
+          <div class="card p-4 hover-lift dashboard-card" id="card-vix" onclick="selectIndexChart('VIX', 14.82, 'Volatility Index')">
+            <div class="flex items-center justify-between mb-2"><span class="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider">VIX</span><i data-lucide="trending-down" class="w-4 h-4 text-rose-400"></i></div>
+            <div class="font-mono text-xl font-bold" data-live-idx="vix">14.82</div>
+            <div class="flex items-center gap-2 mt-1"><span class="text-xs text-rose-400 font-mono" data-live-idx-change="vix">-0.68</span></div>
+            <div class="mt-3 h-8" id="spark-vix"></div>
+          </div>
+          <div class="card p-4 hover-lift border-emerald-500/30 relative overflow-hidden dashboard-card active-card" id="card-nvda" onclick="selectDashboardStock('NVDA')">
+            <div class="absolute -top-4 -right-4 w-20 h-20 bg-emerald-500/10 rounded-full blur-2xl"></div>
+            <div class="relative">
+              <div class="flex items-center justify-between mb-2"><span class="text-[10px] text-emerald-400 uppercase tracking-wider font-semibold">AI Top Pick</span><i data-lucide="sparkles" class="w-4 h-4 text-emerald-400"></i></div>
+              <div class="font-mono text-xl font-bold">NVDA</div>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-xs text-emerald-400 font-mono" data-live-price="NVDA">$135.40</span>
+                <span class="text-xs text-emerald-400" data-live-change="NVDA">+1.73%</span>
+              </div>
+              <div class="mt-3 flex items-center gap-1.5"><div class="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-emerald-500 to-emerald-300" style="width: 94%"></div></div><span class="text-xs font-mono text-emerald-400 font-bold">94</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mb-6">
+          <div class="lg:col-span-2 card overflow-hidden">
+            <div class="p-5 border-b border-[var(--border)]">
+              <div class="flex items-start justify-between flex-wrap gap-3">
+                <div>
+                  <div class="flex items-center gap-2 mb-1.5">
+                    <span class="font-mono font-bold text-lg" id="chartTicker">NVDA</span>
+                    <span class="text-xs text-[var(--text-secondary)]" id="chartName">NVIDIA Corporation</span>
+                    <span class="signal-strong-buy text-[10px] px-1.5 py-0.5 rounded font-semibold" id="chartSignal">STRONG BUY</span>
+                  </div>
+                  <div class="flex items-baseline gap-3 flex-wrap">
+                    <span class="font-mono text-3xl font-bold" id="chartPrice">$135.40</span>
+                    <span class="text-emerald-400 font-mono text-sm" id="chartChange">+2.31 (+1.73%)</span>
+                  </div>
+                  <div class="grid grid-cols-4 gap-4 mt-3">
+                    <div><div class="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Open</div><div class="font-mono text-sm text-[var(--text-secondary)]" id="statOpen">$133.37</div></div>
+                    <div><div class="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">High</div><div class="font-mono text-sm text-emerald-400" id="statHigh">$138.11</div></div>
+                    <div><div class="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Low</div><div class="font-mono text-sm text-rose-400" id="statLow">$131.34</div></div>
+                    <div><div class="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Close</div><div class="font-mono text-sm text-[var(--text-secondary)]" id="statClose">$135.40</div></div>
+                  </div>
+                </div>
+                <div class="flex flex-col gap-2">
+                  <div class="flex gap-1 p-1 bg-[var(--bg-elevated)] rounded-lg" id="chartTimeframes">
+                    <button data-tf="1D" onclick="changeTimeframe('1D')" class="tf-btn px-2.5 py-1 text-xs rounded-md text-[var(--text-secondary)] hover:bg-white/5">1D</button>
+                    <button data-tf="1W" onclick="changeTimeframe('1W')" class="tf-btn px-2.5 py-1 text-xs rounded-md text-[var(--text-secondary)] hover:bg-white/5">1W</button>
+                    <button data-tf="1M" onclick="changeTimeframe('1M')" class="tf-btn active px-2.5 py-1 text-xs rounded-md">1M</button>
+                    <button data-tf="3M" onclick="changeTimeframe('3M')" class="tf-btn px-2.5 py-1 text-xs rounded-md text-[var(--text-secondary)] hover:bg-white/5">3M</button>
+                    <button data-tf="1Y" onclick="changeTimeframe('1Y')" class="tf-btn px-2.5 py-1 text-xs rounded-md text-[var(--text-secondary)] hover:bg-white/5">1Y</button>
+                  </div>
+                  <div class="flex gap-1 p-1 bg-[var(--bg-elevated)] rounded-lg justify-center">
+                    <button onclick="zoomChart(-1)" class="zoom-btn p-1 rounded text-[var(--text-secondary)]" title="Zoom Out">
+                      <i data-lucide="zoom-out" class="w-4 h-4"></i>
+                    </button>
+                    <span class="text-[10px] text-[var(--text-tertiary)] flex items-center px-1">Zoom</span>
+                    <button onclick="zoomChart(1)" class="zoom-btn p-1 rounded text-[var(--text-secondary)]" title="Zoom In">
+                      <i data-lucide="zoom-in" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="p-2"><div id="mainChart" class="w-full" style="height: 360px;"></div></div>
+          </div>
+
+          <div class="space-y-4">
+            <div class="card p-5">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="font-display font-semibold">Market Sentiment</h3>
+                <span class="text-[10px] text-[var(--text-tertiary)] uppercase flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-emerald-400 rounded-full pulse-dot"></span> Live</span>
+              </div>
+              <div class="space-y-4">
+                <div class="space-y-1.5">
+                  <div class="flex items-center justify-between text-xs">
+                    <div class="relative flex items-center gap-1 text-[var(--text-secondary)] group">
+                      <span>AI Conviction Index</span>
+                      <i data-lucide="info" class="w-3 h-3 text-[var(--text-tertiary)] cursor-help"></i>
+                      <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-lg text-[10px] text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-xl text-center">
+                        Calculated from aggregated AI model buy/sell signals across the top 100 equities.
+                      </div>
+                    </div>
+                    <span class="font-mono font-bold text-emerald-400">82</span>
+                  </div>
+                  <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                    <div class="h-full bg-emerald-500 rounded-full" style="width: 82%"></div>
+                  </div>
+                </div>
+                <div class="space-y-1.5">
+                  <div class="flex items-center justify-between text-xs">
+                    <div class="relative flex items-center gap-1 text-[var(--text-secondary)] group">
+                      <span>13-Week Momentum</span>
+                      <i data-lucide="info" class="w-3 h-3 text-[var(--text-tertiary)] cursor-help"></i>
+                      <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-lg text-[10px] text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-xl text-center">
+                        Tracks the percentage of stocks trading above their 13-week moving average.
+                      </div>
+                    </div>
+                    <span class="font-mono font-bold text-amber-400">65</span>
+                  </div>
+                  <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                    <div class="h-full bg-amber-500 rounded-full" style="width: 65%"></div>
+                  </div>
+                </div>
+                <div class="space-y-1.5">
+                  <div class="flex items-center justify-between text-xs">
+                    <div class="relative flex items-center gap-1 text-[var(--text-secondary)] group">
+                      <span>Volatility Pressure</span>
+                      <i data-lucide="info" class="w-3 h-3 text-[var(--text-tertiary)] cursor-help"></i>
+                      <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-lg text-[10px] text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-xl text-center">
+                        Inverse score of the VIX, measuring near-term expected market volatility.
+                      </div>
+                    </div>
+                    <span class="font-mono font-bold text-rose-400">28</span>
+                  </div>
+                  <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                    <div class="h-full bg-rose-500 rounded-full" style="width: 28%"></div>
+                  </div>
+                </div>
+                <div class="space-y-1.5">
+                  <div class="flex items-center justify-between text-xs">
+                    <div class="relative flex items-center gap-1 text-[var(--text-secondary)] group">
+                      <span>Market Breadth</span>
+                      <i data-lucide="info" class="w-3 h-3 text-[var(--text-tertiary)] cursor-help"></i>
+                      <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 p-2 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-lg text-[10px] text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-xl text-center">
+                        Measures advancing vs. declining stocks on major exchanges (Advance/Decline Line).
+                      </div>
+                    </div>
+                    <span class="font-mono font-bold text-emerald-400">71</span>
+                  </div>
+                  <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                    <div class="h-full bg-emerald-500 rounded-full" style="width: 71%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card p-5">
+              <h3 class="font-display font-semibold mb-3">Sector Performance</h3>
+              <div class="space-y-2.5" id="sectorList"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
+          <div class="lg:col-span-3 card overflow-hidden">
+            <div class="p-5 border-b border-[var(--border)] flex items-center justify-between">
+              <div><h3 class="font-display font-semibold">Trending Stocks</h3><p class="text-xs text-[var(--text-secondary)] mt-0.5">AI-ranked by momentum & sentiment</p></div>
+              <button onclick="switchView('screener')" class="text-xs text-emerald-400 hover:underline flex items-center gap-1 font-semibold">View all <i data-lucide="arrow-right" class="w-3 h-3"></i></button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full" id="trending-stocks-table">
+                <thead><tr class="border-b border-[var(--border)] text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
+                  <th class="text-left px-5 py-3 font-medium">Ticker</th><th class="text-right px-3 py-3 font-medium">Price</th><th class="text-right px-3 py-3 font-medium">Change</th><th class="text-center px-3 py-3 font-medium">AI Score</th><th class="text-center px-3 py-3 font-medium">Signal</th><th class="text-right px-5 py-3 font-medium">7D Trend</th>
+                </tr></thead>
+                <tbody id="trendingBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="lg:col-span-2 card overflow-hidden flex flex-col">
+            <div class="p-5 border-b border-[var(--border)]"><h3 class="font-display font-semibold">AI News Feed</h3><p class="text-xs text-[var(--text-secondary)] mt-0.5">Summarized by AlphaEdge AI</p></div>
+            <div class="max-h-[600px] overflow-y-auto" id="newsFeed"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAT -->
+      <div class="view" id="view-chat">
+        <div class="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4 lg:gap-6" style="min-height: calc(100vh - 160px);">
+          <div class="card flex flex-col overflow-hidden" style="max-height: calc(100vh - 160px);">
+            <div class="p-4 border-b border-[var(--border)]">
+              <h3 class="font-display font-semibold mb-3">Research Universe</h3>
+              <div class="relative"><i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]"></i><input type="text" id="stockSearch" placeholder="Search ticker or company…" class="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-lg pl-10 pr-3 py-2 text-sm placeholder-[var(--text-tertiary)] focus:outline-none focus:border-emerald-500/40" oninput="state.stockSearch=this.value; renderStockList();" /></div>
+            </div>
+            <div class="flex-1 overflow-y-auto" id="stockList"></div>
+          </div>
+          <div class="card flex flex-col overflow-hidden" style="max-height: calc(100vh - 160px);">
+            <div class="p-4 border-b border-[var(--border)] flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="relative"><div class="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center"><i data-lucide="sparkles" class="w-5 h-5 text-black" stroke-width="2.5"></i></div><div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[var(--bg-card)]"></div></div>
+                <div><div class="font-display font-semibold flex items-center gap-2">AI Equity Assistant <span class="text-[10px] bg-emerald-500/15 text-emerald-400 px-1.5 py-0.5 rounded font-semibold">Gemini AI</span></div><div class="text-xs text-[var(--text-secondary)]" id="chatContext">Researching: <span class="text-emerald-400 font-mono font-semibold">NVDA</span> · NVIDIA Corp.</div></div>
+              </div>
+              <button onclick="clearChat()" class="p-2 rounded-lg hover:bg-white/5 text-[var(--text-secondary)]"><i data-lucide="plus" class="w-4 h-4"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin" id="chatMessages"></div>
+            <div class="px-4 pt-3 border-t border-[var(--border)]">
+              <div class="text-[10px] uppercase tracking-[0.18em] text-[var(--text-tertiary)] mb-2">Quick Actions</div>
+              <div class="flex flex-wrap gap-2" id="quickActions">
+                <button class="quick-action text-xs px-3 py-1.5 bg-[var(--bg-elevated)] hover:bg-white/5 border border-[var(--border)] hover:border-emerald-500/30 rounded-full text-[var(--text-secondary)] hover:text-white transition-colors" onclick="sendQuickAction('summarize-10k')"><i data-lucide="file-text" class="w-3 h-3 inline mr-1.5 -mt-0.5"></i>Summarize latest 10-K</button>
+                <button class="quick-action text-xs px-3 py-1.5 bg-[var(--bg-elevated)] hover:bg-white/5 border border-[var(--border)] hover:border-emerald-500/30 rounded-full text-[var(--text-secondary)] hover:text-white transition-colors" onclick="sendQuickAction('financial-health')"><i data-lucide="heart-pulse" class="w-3 h-3 inline mr-1.5 -mt-0.5"></i>Analyze financial health</button>
+                <button class="quick-action text-xs px-3 py-1.5 bg-[var(--bg-elevated)] hover:bg-white/5 border border-[var(--border)] hover:border-emerald-500/30 rounded-full text-[var(--text-secondary)] hover:text-white transition-colors" onclick="sendQuickAction('competitors')"><i data-lucide="swords" class="w-3 h-3 inline mr-1.5 -mt-0.5"></i>Compare to competitors</button>
+                <button class="quick-action text-xs px-3 py-1.5 bg-[var(--bg-elevated)] hover:bg-white/5 border border-[var(--border)] hover:border-emerald-500/30 rounded-full text-[var(--text-secondary)] hover:text-white transition-colors" onclick="sendQuickAction('risks')"><i data-lucide="alert-triangle" class="w-3 h-3 inline mr-1.5 -mt-0.5"></i>Key risk factors</button>
+                <button class="quick-action text-xs px-3 py-1.5 bg-[var(--bg-elevated)] hover:bg-white/5 border border-[var(--border)] hover:border-emerald-500/30 rounded-full text-[var(--text-secondary)] hover:text-white transition-colors" onclick="sendQuickAction('forecast')"><i data-lucide="line-chart" class="w-3 h-3 inline mr-1.5 -mt-0.5"></i>12-month forecast</button>
+              </div>
+            </div>
+            <div class="p-4 border-t border-[var(--border)]">
+              <form id="chatForm" onsubmit="event.preventDefault(); handleChatSubmit();">
+                <div class="relative">
+                  <textarea id="chatInput" rows="2" placeholder="Ask about earnings, valuation, risks, forecasts…" class="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl pl-4 pr-12 py-3 text-sm placeholder-[var(--text-tertiary)] focus:outline-none focus:border-emerald-500/40 resize-none"></textarea>
+                  <button type="submit" class="absolute right-3 bottom-3 bg-emerald-500 hover:bg-emerald-400 text-black p-2 rounded-lg transition-colors">
+                    <i data-lucide="arrow-up" class="w-4 h-4" stroke-width="2.5"></i>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREENER -->
+      <div class="view" id="view-screener">
+        <div class="flex items-end justify-between mb-6 flex-wrap gap-4"><div><h1 class="font-display text-2xl lg:text-3xl font-bold tracking-tight">Stock Screener</h1><p class="text-sm text-[var(--text-secondary)] mt-1">Filter 10 equities by fundamentals and AI signals</p></div></div>
+        <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 lg:gap-6">
+          <div class="card p-5 h-fit space-y-5 lg:sticky lg:top-32">
+            <div class="flex items-center justify-between"><h3 class="font-display font-semibold">Filters</h3><button onclick="resetFilters()" class="text-xs text-rose-400 hover:underline">Reset</button></div>
+            <div><label class="text-xs font-medium text-[var(--text-secondary)] mb-2 block">AI Signal</label><div class="space-y-1.5">
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 px-2 py-1 rounded"><input type="checkbox" class="signal-filter checkbox-emerald" value="Strong Buy" checked onchange="updateFilters()" /><span class="signal-strong-buy text-[10px] px-1.5 py-0.5 rounded font-semibold">STRONG BUY</span></label>
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 px=2 py-1 rounded"><input type="checkbox" class="signal-filter checkbox-emerald" value="Buy" checked onchange="updateFilters()" /><span class="signal-buy text-[10px] px-1.5 py-0.5 rounded font-semibold">BUY</span></label>
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 px=2 py-1 rounded"><input type="checkbox" class="signal-filter checkbox-emerald" value="Hold" checked onchange="updateFilters()" /><span class="signal-hold text-[10px] px-1.5 py-0.5 rounded font-semibold">HOLD</span></label>
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 px=2 py-1 rounded"><input type="checkbox" class="signal-filter checkbox-emerald" value="Sell" checked onchange="updateFilters()" /><span class="signal-sell text-[10px] px-1.5 py-0.5 rounded font-semibold">SELL</span></label>
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 px=2 py-1 rounded"><input type="checkbox" class="signal-filter checkbox-emerald" value="Strong Sell" checked onchange="updateFilters()" /><span class="signal-strong-sell text-[10px] px-1.5 py-0.5 rounded font-semibold">STRONG SELL</span></label>
+            </div></div>
+            <div>
+              <label class="text-xs font-medium text-[var(--text-secondary)] mb-2 block">Sector</label>
+              <select id="sectorFilter" class="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-emerald-500/40" onchange="updateFilters()">
+                <option value="">All Sectors</option>
+                <option>Technology</option><option>Financials</option><option>Healthcare</option><option>Consumer</option><option>Energy</option><option>Industrials</option><option>Communication</option><option>Materials</option><option>Utilities</option><option>Real Estate</option>
+              </select>
+            </div>
+          </div>
+          <div class="card overflow-hidden">
+            <div class="p-4 border-b border-[var(--border)]"><span class="font-semibold font-mono" id="resultCount">10</span><span class="text-[var(--text-secondary)] text-sm"> results</span></div>
+            <div class="hidden md:block overflow-x-auto" style="max-height: 70vh;">
+              <table class="w-full min-w-[600px]" id="stock-screener-table">
+                <thead class="sticky top-0 bg-[var(--bg-card)] z-10">
+                  <tr class="border-b border-[var(--border)] text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
+                    <th class="text-left px-4 py-3 font-medium cursor-pointer hover:text-white transition-colors" onclick="setScreenerSort('ticker')">Ticker <span id="sort-icon-ticker" class="inline-block align-middle"></span></th>
+                    <th class="text-left px-3 py-3 font-medium cursor-pointer hover:text-white transition-colors" onclick="setScreenerSort('sector')">Sector <span id="sort-icon-sector" class="inline-block align-middle"></span></th>
+                    <th class="text-right px-3 py-3 font-medium cursor-pointer hover:text-white transition-colors" onclick="setScreenerSort('price')">Price <span id="sort-icon-price" class="inline-block align-middle"></span></th>
+                    <th class="text-right px-3 py-3 font-medium cursor-pointer hover:text-white transition-colors" onclick="setScreenerSort('change')">Change <span id="sort-icon-change" class="inline-block align-middle"></span></th>
+                    <th class="text-center px-3 py-3 font-medium cursor-pointer hover:text-white transition-colors" onclick="setScreenerSort('aiScore')">AI Score <span id="sort-icon-aiScore" class="inline-block align-middle"></span></th>
+                    <th class="text-center px-4 py-3 font-medium cursor-pointer hover:text-white transition-colors" onclick="setScreenerSort('signal')">Signal <span id="sort-icon-signal" class="inline-block align-middle"></span></th>
+                  </tr>
+                </thead>
+                <tbody id="screenerBody"></tbody>
+              </table>
+            </div>
+            <div id="screenerMobileList" class="md:hidden p-3 space-y-3"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRICING -->
+      <div class="view" id="view-pricing">
+        <div class="text-center max-w-2xl mx-auto mb-10">
+          <h1 class="font-display text-3xl lg:text-4xl font-bold tracking-tight mb-3">Upgrade your edge.</h1>
+          <p class="text-[var(--text-secondary)] text-base lg:text-lg">Choose the plan that matches your conviction.</p>
+          <div class="inline-flex items-center gap-1 mt-8 p-1 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-full">
+            <button class="billing-toggle px-5 py-2 rounded-full text-sm font-medium transition-all bg-emerald-500/20 text-emerald-400" data-cycle="monthly" onclick="setBillingCycle('monthly')">Monthly</button>
+            <button class="billing-toggle px-5 py-2 rounded-full text-sm font-medium transition-all text-[var(--text-secondary)]" data-cycle="annual" onclick="setBillingCycle('annual')">Annual <span class="ml-1 text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">-20%</span></button>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <div class="card p-6 flex flex-col hover-lift">
+            <div class="mb-5"><div class="flex items-center gap-2 mb-1"><i data-lucide="user" class="w-4 h-4 text-[var(--text-secondary)]"></i><span class="font-display font-semibold text-lg">Free</span></div><p class="text-sm text-[var(--text-secondary)]">For casual investors</p></div>
+            <div class="mb-5"><span class="font-mono text-4xl font-bold">$0</span></div>
+            <button class="w-full py-2.5 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-lg text-sm font-semibold mb-6">Current Plan</button>
+            <ul class="space-y-3 text-sm flex-1">
+              <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i><span>5 AI research queries / day</span></li>
+              <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i><span>Delayed market data (15min)</span></li>
+              <li class="flex gap-2 text-[var(--text-tertiary)] opacity-70"><i data-lucide="lock" class="w-4 h-4 flex-shrink-0 mt-0.5"></i><span>Unlimited AI research queries</span></li>
+              <li class="flex gap-2 text-[var(--text-tertiary)] opacity-70"><i data-lucide="lock" class="w-4 h-4 flex-shrink-0 mt-0.5"></i><span>Real-time market data & alerts</span></li>
+            </ul>
+          </div>
+          <div class="card p-6 flex flex-col relative border-emerald-500/40 glow-emerald">
+            <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-emerald-500 to-emerald-400 text-black text-[10px] font-bold uppercase tracking-wider rounded-full whitespace-nowrap">Most Popular</div>
+            <div class="mb-5"><div class="flex items-center gap-2 mb-1"><i data-lucide="zap" class="w-4 h-4 text-emerald-400"></i><span class="font-display font-semibold text-lg">Pro</span></div><p class="text-sm text-[var(--text-secondary)]">For active traders</p></div>
+            <div class="mb-5"><span class="font-mono text-4xl font-bold" id="proPrice">$49</span><span class="text-[var(--text-tertiary)] text-sm" id="proCycle">/month</span></div>
+            <button class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-black rounded-lg text-sm font-semibold mb-6 btn-glow">Upgrade to Pro</button>
+            <ul class="space-y-3 text-sm flex-1">
+              <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i><span><b class="text-white">Unlimited</b> AI research queries</span></li>
+              <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i><span>Real-time market data & alerts</span></li>
+            </ul>
+          </div>
+          <div class="card p-6 flex flex-col hover-lift">
+            <div class="mb-5"><div class="flex items-center gap-2 mb-1"><i data-lucide="building-2" class="w-4 h-4 text-cyan-400"></i><span class="font-display font-semibold text-lg">Institutional</span></div><p class="text-sm text-[var(--text-secondary)]">For funds and teams</p></div>
+            <div class="mb-5"><span class="font-mono text-4xl font-bold" id="instPrice">$299</span><span class="text-[var(--text-tertiary)] text-sm" id="instCycle">/month</span></div>
+            <button class="w-full py-2.5 bg-[var(--bg-elevated)] border border-cyan-500/30 hover:border-cyan-500/60 text-cyan-400 rounded-lg text-sm font-semibold mb-6">Contact Sales</button>
+            <ul class="space-y-3 text-sm flex-1">
+              <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5"></i><span><b class="text-white">Everything in Pro</b></span></li>
+              <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5"></i><span>Custom AI model fine-tuning</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+<div id="newsModal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4" style="background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);" onclick="closeNewsModal()">
+  <div class="card w-full max-w-lg p-6 relative" onclick="event.stopPropagation()">
+    <button onclick="closeNewsModal()" class="absolute top-4 right-4 text-[var(--text-tertiary)] hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+    <div id="newsModalContent"></div>
+  </div>
+</div>
+
+<div id="chartTooltip" class="fixed hidden pointer-events-none p-2.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] shadow-xl z-[200] text-xs" style="min-width: 160px;"></div>
+
+<script>
+const FINNHUB_KEY = 'd9p4ps9r01qu49ar9qfg';
+
+const state = {
+  currentView: 'dashboard',
+  selectedStock: 'NVDA',
+  chatBusy: false,
+  billingCycle: 'monthly',
+  filters: { signals:['Strong Buy','Buy','Hold','Sell','Strong Sell'], sector:'' },
+  stockSearch: '',
+  screenerSort: { key: 'aiScore', dir: 'desc' },
+  activeTimeframe: '1M',
+  chartZoom: 1,
+  currentChartData: [],
+  isSimulated: true,
+  watchlist: JSON.parse(localStorage.getItem('watchlist')) || []
+};
+
+let chatHistory = [];
+
+const fallbackData = {
+  stocks: [
+    { ticker: "NVDA", name: "NVIDIA Corporation", sector: "Technology", price: 135.40, change: 2.31, aiScore: 94, signal: "Strong Buy" },
+    { ticker: "AAPL", name: "Apple Inc.", sector: "Technology", price: 227.48, change: 1.12, aiScore: 88, signal: "Strong Buy" },
+    { ticker: "MSFT", name: "Microsoft Corporation", sector: "Technology", price: 425.22, change: 0.87, aiScore: 85, signal: "Buy" },
+    { ticker: "GOOGL", name: "Alphabet Inc.", sector: "Communication", price: 176.28, change: -0.44, aiScore: 82, signal: "Buy" },
+    { ticker: "AMZN", name: "Amazon.com Inc.", sector: "Consumer", price: 223.15, change: 1.65, aiScore: 79, signal: "Buy" },
+    { ticker: "META", name: "Meta Platforms Inc.", sector: "Communication", price: 742.50, change: 2.94, aiScore: 76, signal: "Buy" },
+    { ticker: "TSLA", name: "Tesla Inc.", sector: "Consumer", price: 442.30, change: -1.22, aiScore: 58, signal: "Hold" },
+    { ticker: "JPM", name: "JPMorgan Chase & Co.", sector: "Financials", price: 298.44, change: 0.55, aiScore: 74, signal: "Buy" },
+    { ticker: "V", name: "Visa Inc.", sector: "Financials", price: 345.12, change: 0.33, aiScore: 71, signal: "Buy" },
+    { ticker: "NFLX", name: "Netflix Inc.", sector: "Communication", price: 1102.80, change: -0.78, aiScore: 65, signal: "Hold" }
+  ]
+};
+
+function mulberry32(seed){ return function(){ let t = seed += 0x6D2B79F5; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+const stocks = fallbackData.stocks.map((s, i) => {
+  const seed = s.ticker.charCodeAt(0) * 7 + s.ticker.charCodeAt(1) * 13 + i * 5;
+  const rand = mulberry32(seed);
+  const history = [];
+  let price = s.price * (0.88 + rand() * 0.12);
+  for (let d = 0; d < 365; d++) {
+    const open = price;
+    const drift = (rand() - 0.48) * s.price * 0.03;
+    const close = open + drift;
+    const wick = Math.abs(drift) * (0.5 + rand() * 1.5);
+    history.push({ open, close, high: Math.max(open, close) + wick * 0.6, low: Math.min(open, close) - wick * 0.6, volume: 0.4 + rand() * 0.8 });
+    price = close;
+  }
+  const offset = s.price - history[history.length - 1].close;
+  history.forEach(d => { d.open += offset; d.close += offset; d.high += offset; d.low += offset; });
+  
+  const prevClose = history[history.length - 2].close;
+  const changePct = (s.change / prevClose) * 100;
+  
+  return { ...s, prevClose, changePct, history };
+});
+
+const indexMap = {
+  'SPY': { name: 'S&P 500 Index', sector: 'Index' },
+  'QQQ': { name: 'Nasdaq Index', sector: 'Index' },
+  'VIX': { name: 'Volatility Index', sector: 'Index' }
+};
+
+const sectors = [
+  { name: 'Technology', change: 2.4 }, { name: 'Financials', change: 1.1 },
+  { name: 'Healthcare', change: 0.8 }, { name: 'Consumer', change: -0.3 },
+  { name: 'Energy', change: -1.2 }, { name: 'Industrials', change: 0.5 }
+];
+
+const newsItems = [
+  { source: "Bloomberg", time: "2m ago", sentiment: "Positive", headline: "NVIDIA unveils next-gen GPU architecture with 2.5x performance leap", summary: "NVIDIA announced its next-gen Blackwell Ultra architecture at Computex, claiming 2.5× training throughput over H100.", tickers: ["NVDA"] },
+  { source: "Reuters", time: "14m ago", sentiment: "Neutral", headline: "Fed minutes signal patience on rate cuts amid sticky inflation", summary: "FOMC minutes revealed officials are unconvinced inflation is sustainably returning to 2%.", tickers: ["SPY"] },
+  { source: "CNBC", time: "38m ago", sentiment: "Positive", headline: "Apple's AI push: on-device models and privacy-first approach", summary: "Apple confirmed a long-rumored OpenAI partnership at WWDC, integrating ChatGPT into iOS 18.", tickers: ["AAPL"] },
+  { source: "WSJ", time: "1h ago", sentiment: "Negative", headline: "Tesla Q2 deliveries miss estimates as EV demand softens", summary: "Tesla reported 384K Q2 deliveries vs. 395K consensus, a 6% YoY decline.", tickers: ["TSLA"] }
+];
+
+function $(s){ return document.querySelector(s); }
+function $$(s){ return document.querySelectorAll(s); }
+function fmtPrice(n){ return '$' + n.toFixed(2); }
+function signalClass(s){ return 'signal-' + s.toLowerCase().replace(' ','-'); }
+
+/* ============================================================
+   WATCHLIST LOGIC
+============================================================ */
+function toggleWatchlist(ticker, event) {
+  event.stopPropagation();
+  const index = state.watchlist.indexOf(ticker);
+  if (index > -1) {
+    state.watchlist.splice(index, 1);
+  } else {
+    state.watchlist.push(ticker);
+  }
+  localStorage.setItem('watchlist', JSON.stringify(state.watchlist));
+  renderTrending();
+  renderScreener();
+  updateWatchlistBadge();
+}
+
+function updateWatchlistBadge() {
+  const badge = document.getElementById('watchlistBadge');
+  if (badge) {
+    badge.textContent = state.watchlist.length;
+    badge.style.display = state.watchlist.length > 0 ? 'inline-block' : 'none';
+  }
+}
+
+/* ============================================================
+   SIDEBAR NAVIGATION
+============================================================ */
+function switchView(viewId) {
+  console.log("Nav clicked: " + viewId);
+  $$('.view').forEach(v => v.classList.remove('active'));
+  $$('.nav-item').forEach(n => n.classList.remove('active'));
+  $('#view-' + viewId).classList.add('active');
+  const nav = document.querySelector(`.nav-item[data-view="${viewId}"]`);
+  if (nav) nav.classList.add('active');
+  state.currentView = viewId;
+  if (window.lucide) lucide.createIcons({ attrs: {} });
+  
+  if (viewId === 'dashboard') {
+    setTimeout(() => {
+      drawSparkline('spark-sp500', [5120,5158,5172,5149,5188,5210,5198,5232,5247], '#10b981');
+      drawSparkline('spark-nasdaq', [16480,16590,16642,16598,16710,16788,16832], '#10b981');
+      drawSparkline('spark-vix', [15.8,15.4,15.6,15.2,14.9,15.1,14.82], '#fb7185');
+      renderTrending();
+      renderNews();
+      renderSectors();
+    }, 100);
+  }
+  if (viewId === 'chat') {
+    setTimeout(() => { if (!$('#chatMessages').children.length) initChat(); renderStockList(); }, 50);
+  }
+  if (viewId === 'screener') {
+    setTimeout(() => { renderScreener(); }, 50);
+  }
+  
+  if (window.innerWidth < 768) {
+    $('.sidebar').classList.remove('open');
+  }
+  
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleSidebar(){ $('.sidebar').classList.toggle('open'); }
+
+document.addEventListener('click', (e) => {
+  if (window.innerWidth < 768) {
+    const sidebar = $('.sidebar');
+    const hamburger = e.target.closest('[onclick="toggleSidebar()"]');
+    if (!sidebar.contains(e.target) && !hamburger && sidebar.classList.contains('open')) {
+      sidebar.classList.remove('open');
+    }
+  }
+});
+
+/* ============================================================
+   SEARCH BAR
+============================================================ */
+function handleSearchKey(event) {
+  if (event.key === 'Enter') {
+    handleSearch();
+  }
+}
+
+async function handleSearch() {
+  const input = $('#globalSearch');
+  const ticker = input.value.toUpperCase().trim();
+  const errorEl = $('#searchError');
+  
+  if (!ticker) return;
+  
+  console.log("Searching for: " + ticker);
+  errorEl.classList.add('hidden');
+  
+  const localStock = stocks.find(s => s.ticker === ticker);
+  if (localStock) {
+    await selectDashboardStock(ticker);
+    input.value = '';
+    return;
+  }
+  
+  try {
+    const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${FINNHUB_KEY}`);
+    const data = await res.json();
+    
+    if (data && data.c !== 0 && data.c !== undefined) {
+      const newStock = {
+        ticker: ticker,
+        name: ticker,
+        sector: 'Unknown',
+        price: data.c,
+        prevClose: data.pc,
+        change: data.d,
+        changePct: data.dp,
+        aiScore: 50,
+        signal: 'Hold',
+        history: []
+      };
+      stocks.push(newStock);
+      await selectDashboardStock(ticker);
+      input.value = '';
+    } else {
+      errorEl.classList.remove('hidden');
+      setTimeout(() => errorEl.classList.add('hidden'), 5000);
+    }
+  } catch (e) {
+    console.error("Search error:", e);
+    errorEl.classList.remove('hidden');
+    setTimeout(() => errorEl.classList.add('hidden'), 5000);
+  }
+}
+
+/* ============================================================
+   CLICK HANDLERS
+============================================================ */
+
+async function selectDashboardStock(ticker) {
+  let s = stocks.find(x => x.ticker === ticker);
+  if (!s) return;
+  
+  state.selectedStock = ticker;
+  localStorage.setItem('lastTicker', ticker);
+  
+  if (state.currentView !== 'dashboard') switchView('dashboard');
+  
+  $('#chartTicker').textContent = s.ticker;
+  $('#chartName').textContent = s.name;
+  $('#chartSignal').textContent = s.signal.toUpperCase();
+  $('#chartSignal').className = signalClass(s.signal) + " text-[10px] px-1.5 py-0.5 rounded font-semibold";
+  
+  $('#chartPrice').textContent = '$' + s.price.toFixed(2);
+  const isUp = s.change >= 0;
+  $('#chartChange').textContent = `${isUp ? '+' : ''}${s.change.toFixed(2)} (${isUp ? '+' : ''}${s.changePct.toFixed(2)}%)`;
+  $('#chartChange').className = `font-mono text-sm ${isUp ? 'text-emerald-400' : 'text-rose-400'}`;
+  
+  updateActiveCard(ticker);
+  await changeTimeframe(state.activeTimeframe);
+  
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  fetchStockQuote(ticker);
+}
+
+async function selectResearchStock(ticker) {
+  let s = stocks.find(x => x.ticker === ticker);
+  if (!s) return;
+  
+  if (state.selectedStock !== ticker) {
+    chatHistory = [];
+    $('#chatMessages').innerHTML = '';
+  }
+  
+  state.selectedStock = ticker;
+  localStorage.setItem('lastTicker', ticker);
+  
+  $('#chatContext').innerHTML = `Researching: <span class="text-emerald-400 font-mono font-semibold">${s.ticker}</span> · ${s.name}`;
+  
+  switchView('chat');
+  renderStockList();
+}
+
+function selectChatTicker(ticker) {
+  let s = stocks.find(x => x.ticker === ticker);
+  if (!s) return;
+  
+  state.selectedStock = ticker;
+  localStorage.setItem('lastTicker', ticker);
+  
+  $('#chatContext').innerHTML = `Researching: <span class="text-emerald-400 font-mono font-semibold">${s.ticker}</span> · ${s.name}`;
+  renderStockList();
+}
+
+function selectIndexChart(ticker, basePrice, name) {
+  state.selectedStock = ticker;
+  localStorage.setItem('lastTicker', ticker);
+  state.isSimulated = true;
+  state.currentChartData = generateSyntheticChart(basePrice, 30);
+  state.chartZoom = 1;
+  
+  $('#chartTicker').textContent = ticker;
+  $('#chartName').textContent = name;
+  $('#chartSignal').textContent = 'INDEX';
+  $('#chartSignal').className = "signal-hold text-[10px] px-1.5 py-0.5 rounded font-semibold";
+  $('#chartPrice').textContent = '$' + basePrice.toFixed(2);
+  $('#chartChange').textContent = '--';
+  $('#chartChange').className = 'font-mono text-sm text-[var(--text-secondary)]';
+  
+  updateActiveCard(ticker);
+  renderChart();
+  updateChartHeader();
+  
+  if (state.currentView !== 'dashboard') switchView('dashboard');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ============================================================
+   BACKGROUND API FETCHES
+============================================================ */
+
+async function fetchStockQuote(ticker) {
+  try {
+    const quoteRes = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${FINNHUB_KEY}`);
+    const quoteData = await quoteRes.json();
+    if (quoteData && quoteData.c !== undefined && quoteData.c !== 0) {
+      let s = stocks.find(x => x.ticker === ticker);
+      if (s) {
+        s.price = quoteData.c; s.prevClose = quoteData.pc; s.change = quoteData.d; s.changePct = quoteData.dp;
+      }
+      
+      if (state.selectedStock === ticker) {
+        $('#chartPrice').textContent = '$' + quoteData.c.toFixed(2);
+        const isUp = quoteData.d >= 0;
+        $('#chartChange').textContent = `${isUp ? '+' : ''}${quoteData.d.toFixed(2)} (${isUp ? '+' : ''}${quoteData.dp.toFixed(2)}%)`;
+        $('#chartChange').className = `font-mono text-sm ${isUp ? 'text-emerald-400' : 'text-rose-400'}`;
+      }
+      
+      renderTickerTape();
+      if (state.currentView === 'dashboard') renderTrending();
+      if (state.currentView === 'screener') renderScreener();
+      if (state.currentView === 'chat') renderStockList();
+      
+      if (state.isSimulated && state.currentChartData.c && state.currentChartData.c.length > 0 && state.selectedStock === ticker) {
+        const lastIdx = state.currentChartData.c.length - 1;
+        state.currentChartData.o[lastIdx] = quoteData.c * 0.985;
+        state.currentChartData.h[lastIdx] = quoteData.c * 1.02;
+        state.currentChartData.l[lastIdx] = quoteData.c * 0.97;
+        state.currentChartData.c[lastIdx] = quoteData.c;
+        renderChart();
+        updateChartHeader();
+      }
+    }
+  } catch (e) { 
+    console.error("Quote fetch error:", e); 
+  }
+}
+
+async function fetchRealTimeQuotes() {
+  const promises = stocks.map(async (s) => {
+    try {
+      const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${s.ticker}&token=${FINNHUB_KEY}`);
+      const data = await res.json();
+      if (data && data.c !== undefined && data.c !== 0) {
+        s.price = data.c; s.prevClose = data.pc; s.change = data.d; s.changePct = data.dp;
+      }
+    } catch (e) { console.error("Quote fetch error for", s.ticker, e); }
+  });
+  await Promise.all(promises);
+  
+  renderTickerTape();
+  if (state.currentView === 'dashboard') renderTrending();
+  if (state.currentView === 'screener') renderScreener();
+  if (state.currentView === 'chat') renderStockList();
+}
+
+/* ============================================================
+   CHART WITH FALLBACK & TIMEFRAMES
+============================================================ */
+
+function generateSyntheticChart(currentPrice, points) {
+  const data = { c: [], t: [], o: [], h: [], l: [], v: [] };
+  let price = currentPrice * 0.9;
+  const now = Math.floor(Date.now() / 1000);
+  for (let i = points; i > 0; i--) {
+    const open = price;
+    const drift = (Math.random() - 0.45) * currentPrice * 0.02;
+    const close = open + drift;
+    const high = Math.max(open, close) + Math.random() * currentPrice * 0.01;
+    const low = Math.min(open, close) - Math.random() * currentPrice * 0.01;
+    data.o.push(open);
+    data.c.push(close);
+    data.h.push(high);
+    data.l.push(low);
+    data.v.push(Math.random() * 10);
+    data.t.push(now - (i * 86400));
+    price = close;
+  }
+  if (data.c.length > 0) {
+    const lastIdx = data.c.length - 1;
+    data.o[lastIdx] = currentPrice * 0.985;
+    data.h[lastIdx] = currentPrice * 1.02;
+    data.l[lastIdx] = currentPrice * 0.97;
+    data.c[lastIdx] = currentPrice;
+  }
+  return data;
+}
+
+async function fetchStockCandles(ticker, timeframe) {
+  let resolution, from, points;
+  const to = Math.floor(Date.now() / 1000);
+  switch(timeframe) {
+    case '1D': resolution = '5'; from = to - 86400; points = 24; break;
+    case '1W': resolution = '60'; from = to - (86400 * 7); points = 7; break;
+    case '1M': resolution = 'D'; from = to - (86400 * 30); points = 30; break;
+    case '3M': resolution = 'D'; from = to - (86400 * 90); points = 90; break;
+    case '1Y': resolution = 'W'; from = to - (86400 * 365); points = 52; break;
+    default: resolution = 'D'; from = to - (86400 * 30); points = 30;
+  }
+  
+  try {
+    const res = await fetch(`https://finnhub.io/api/v1/stock/candle?symbol=${ticker}&resolution=${resolution}&from=${from}&to=${to}&token=${FINNHUB_KEY}`);
+    const data = await res.json();
+    if (data && data.s === 'ok' && data.c && data.c.length > 0) {
+      state.isSimulated = false;
+      state.currentChartData = data;
+      return;
+    }
+  } catch (e) {
+    console.error("Finnhub candle fetch error, falling back to synthetic:", e);
+  }
+  
+  const stock = stocks.find(s => s.ticker === ticker);
+  const currentPrice = stock ? stock.price : 100;
+  state.isSimulated = true;
+  state.currentChartData = generateSyntheticChart(currentPrice, points);
+}
+
+async function changeTimeframe(tf) {
+  state.activeTimeframe = tf;
+  localStorage.setItem('lastTimeframe', tf);
+  state.chartZoom = 1;
+  
+  document.querySelectorAll('.tf-btn').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.dataset.tf === tf) btn.classList.add('active');
+  });
+
+  if (indexMap[state.selectedStock]) {
+    let basePrice = 5247.18;
+    if (state.selectedStock === 'QQQ') basePrice = 16832.91;
+    if (state.selectedStock === 'VIX') basePrice = 14.82;
+    let points = 30;
+    if (tf === '1D') points = 24;
+    if (tf === '1W') points = 7;
+    if (tf === '3M') points = 90;
+    if (tf === '1Y') points = 52;
+    state.currentChartData = generateSyntheticChart(basePrice, points);
+    state.isSimulated = true;
+  } else {
+    await fetchStockCandles(state.selectedStock, tf);
+  }
+  
+  renderChart();
+  updateChartHeader();
+}
+
+function updateChartHeader() {
+  const data = state.currentChartData;
+  if (!data || !data.c || data.c.length === 0) {
+    $('#statOpen').textContent = '--';
+    $('#statHigh').textContent = '--';
+    $('#statLow').textContent = '--';
+    $('#statClose').textContent = '--';
+    return;
+  }
+  
+  const lastIdx = data.c.length - 1;
+  $('#statOpen').textContent = '$' + data.o[lastIdx].toFixed(2);
+  $('#statHigh').textContent = '$' + data.h[lastIdx].toFixed(2);
+  $('#statLow').textContent = '$' + data.l[lastIdx].toFixed(2);
+  $('#statClose').textContent = '$' + data.c[lastIdx].toFixed(2);
+}
+
+function renderChart() {
+  const container = document.getElementById('mainChart');
+  if (!container) return;
+  
+  const data = state.currentChartData;
+  
+  if (!data || !data.c || data.c.length === 0) {
+    container.innerHTML = `<div class="flex items-center justify-center h-full text-[var(--text-tertiary)] text-sm">No data available</div>`;
+    return;
+  }
+  
+  const total = data.c.length;
+  const visibleCount = Math.max(5, Math.floor(total * state.chartZoom));
+  const startIdx = total - visibleCount;
+  
+  const cArray = data.c.slice(startIdx);
+  const tArray = data.t.slice(startIdx);
+  
+  const width = Math.max(300, container.clientWidth);
+  const height = 360;
+  const padding = { top: 20, right: 60, bottom: 30, left: 10 };
+  const chartW = width - padding.left - padding.right;
+  const chartH = height - padding.top - padding.bottom;
+  
+  const min = Math.min(...cArray);
+  const max = Math.max(...cArray);
+  const range = max - min === 0 ? 1 : max - min;
+  
+  let pathD = '';
+  let areaD = '';
+  let hoverRects = '';
+  
+  cArray.forEach((price, i) => {
+    const x = padding.left + (i / (cArray.length - 1)) * chartW;
+    const y = padding.top + chartH - ((price - min) / range) * chartH;
+    
+    if (i === 0) {
+      pathD += `M ${x} ${y}`;
+      areaD += `M ${x} ${padding.top + chartH} L ${x} ${y}`;
+    } else {
+      pathD += ` L ${x} ${y}`;
+      areaD += ` L ${x} ${y}`;
+    }
+    
+    const rectW = chartW / cArray.length;
+    const rectX = x - (rectW / 2);
+    hoverRects += `<rect x="${rectX}" y="0" width="${rectW}" height="${height}" fill="transparent" data-idx="${i}" class="chart-hover-target" style="cursor:crosshair;"/>`;
+  });
+  
+  areaD += ` L ${padding.left + chartW} ${padding.top + chartH} Z`;
+  
+  let gridLines = '';
+  for (let i = 0; i <= 5; i++) {
+    const y = padding.top + (chartH / 5) * i;
+    const price = max - (range / 5) * i;
+    gridLines += `<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;
+    gridLines += `<text x="${width - padding.right + 6}" y="${y + 3}" fill="#6b7180" font-size="10">${price.toFixed(2)}</text>`;
+  }
+  
+  const lastPrice = cArray[cArray.length - 1];
+  const lastY = padding.top + chartH - ((lastPrice - min) / range) * chartH;
+  const isUp = cArray.length > 1 ? lastPrice >= cArray[cArray.length - 2] : true;
+  const tagColor = isUp ? '#10b981' : '#f43f5e';
+  
+  let svg = `<svg viewBox="0 0 ${width} ${height}" class="w-full h-full chart-svg" preserveAspectRatio="none" style="font-family:'JetBrains Mono',monospace">`;
+  svg += `<defs><linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/><stop offset="100%" stop-color="#10b981" stop-opacity="0"/></linearGradient></defs>`;
+  
+  if (state.isSimulated) {
+    svg += `<text x="${padding.left + 10}" y="${padding.top + 15}" fill="#fbbf24" font-size="10" font-weight="600">Simulated Data</text>`;
+  }
+  
+  svg += gridLines;
+  svg += `<path d="${areaD}" fill="url(#chartGrad)"/>`;
+  svg += `<path d="${pathD}" fill="none" stroke="#10b981" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  svg += `<line x1="${padding.left}" y1="${lastY}" x2="${width - padding.right}" y2="${lastY}" stroke="${tagColor}" stroke-width="1" stroke-dasharray="4 4" opacity="0.5"/>`;
+  svg += `<rect x="${width - padding.right}" y="${lastY - 9}" width="58" height="18" fill="${tagColor}" rx="3"/>`;
+  svg += `<text x="${width - padding.right + 29}" y="${lastY + 4}" fill="#000" font-size="11" font-weight="700" text-anchor="middle">${lastPrice.toFixed(2)}</text>`;
+  svg += `<line id="crosshairVLine" x1="0" y1="${padding.top}" x2="0" y2="${padding.top + chartH}" stroke="rgba(255,255,255,0.3)" stroke-width="1" stroke-dasharray="3 3" style="display:none; pointer-events:none;"/>`;
+  svg += hoverRects;
+  svg += `</svg>`;
+  
+  container.innerHTML = svg;
+  
+  const tooltip = document.getElementById('chartTooltip');
+  const crosshairVLine = container.querySelector('#crosshairVLine');
+  
+  container.querySelectorAll('.chart-hover-target').forEach(target => {
+    target.addEventListener('mousemove', (e) => {
+      const idx = parseInt(target.getAttribute('data-idx'));
+      const price = cArray[idx];
+      const time = tArray[idx];
+      
+      const date = new Date(time * 1000);
+      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      
+      tooltip.innerHTML = `
+        <div class="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">${dateStr}</div>
+        <div class="text-sm font-mono text-emerald-400">$${price.toFixed(2)}</div>`;
+      tooltip.classList.remove('hidden');
+      
+      let left = e.clientX + 15;
+      let top = e.clientY + 15;
+      if (left + 150 > window.innerWidth) left = e.clientX - 160;
+      if (top + 80 > window.innerHeight) top = e.clientY - 90;
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+      
+      const x = padding.left + (idx / (cArray.length - 1)) * chartW;
+      crosshairVLine.setAttribute('x1', x);
+      crosshairVLine.setAttribute('x2', x);
+      crosshairVLine.style.display = 'block';
+    });
+    
+    target.addEventListener('mouseleave', () => {
+      tooltip.classList.add('hidden');
+      crosshairVLine.style.display = 'none';
+    });
+  });
+}
+
+function zoomChart(direction) {
+  if (direction > 0) state.chartZoom = Math.max(0.25, state.chartZoom - 0.25);
+  else state.chartZoom = Math.min(1, state.chartZoom + 0.25);
+  
+  renderChart();
+}
+
+function updateActiveCard(ticker) {
+  document.querySelectorAll('.dashboard-card').forEach(c => c.classList.remove('active-card'));
+  const cardMap = { 'SPY': 'card-spy', 'QQQ': 'card-qqq', 'VIX': 'card-vix', 'NVDA': 'card-nvda' };
+  if (cardMap[ticker]) {
+    const card = document.getElementById(cardMap[ticker]);
+    if (card) card.classList.add('active-card');
+  }
+}
+
+/* ============================================================
+   AI RESEARCH CHAT WITH PUTER.JS
+============================================================ */
+
+function getSystemPrompt() {
+  const s = stocks.find(x => x.ticker === state.selectedStock) || stocks[0];
+  return `You are AuraEdge AI, a senior equity research analyst. You write like a professional portfolio manager — precise, data-driven, and decisive. Structure every answer as a research note with these exact sections: SNAPSHOT (one-line directional view), FUNDAMENTALS, TECHNICALS / MOMENTUM, CATALYSTS, RISKS (2-3 concrete risks), and BOTTOM LINE. Be decisive. Use bullet points. Always reference the live dashboard data: Asset: ${s.ticker}, Price: $${s.price.toFixed(2)}, AI Score: ${s.aiScore}.`;
+}
+
+async function sendToAI(userMessage) {
+    try {
+        console.log("Sending to Puter.js AI...");
+        
+        const messages = [
+            {role: 'system', content: getSystemPrompt()},
+            ...chatHistory.slice(-10),
+            {role: 'user', content: userMessage}
+        ];
+        
+        let response;
+        try {
+            response = await puter.ai.chat(messages, {model: 'gemini-2.0-flash'});
+        } catch (modelError) {
+            console.warn("Gemini model failed, trying default model:", modelError);
+            response = await puter.ai.chat(messages);
+        }
+        
+        console.log("Raw AI response:", response);
+        
+        const aiText = response?.message?.content 
+            || response?.text 
+            || (typeof response === 'string' ? response : JSON.stringify(response));
+        
+        if (!aiText) {
+            throw new Error("Empty response from AI");
+        }
+        
+        chatHistory.push({ role: 'user', content: userMessage });
+        chatHistory.push({ role: 'assistant', content: aiText });
+        
+        return aiText;
+        
+    } catch (error) {
+        console.error("Puter.js AI Error:", error);
+        const errorMsg = error?.message || error?.error?.message || "Unknown error";
+        return "Sorry, I could not get a response from the AI. Error: " + errorMsg + ". Please check the browser console for details.";
+    }
+}
+
+function handleChatSubmit() {
+  const input = $('#chatInput');
+  const text = input.value.trim();
+  if (!text || state.chatBusy) return;
+  
+  console.log("Chat message sent: " + text);
+  input.value = '';
+  sendChatMessage(text);
+}
+
+function sendQuickAction(action) {
+  if (state.chatBusy) return;
+  
+  const s = stocks.find(x => x.ticker === state.selectedStock) || stocks[0];
+  let prompt = '';
+  let buttonText = '';
+  
+  switch(action) {
+    case 'summarize-10k':
+      prompt = `Summarize the key takeaways from the latest 10-K filing for ${state.selectedStock}.`;
+      buttonText = 'Summarize latest 10-K';
+      break;
+    case 'financial-health':
+      prompt = `Analyze the current financial health and balance sheet of ${state.selectedStock}.`;
+      buttonText = 'Analyze financial health';
+      break;
+    case 'competitors':
+      prompt = `Compare ${state.selectedStock} to its top 2 competitors in the market right now.`;
+      buttonText = 'Compare to competitors';
+      break;
+    case 'risks':
+      prompt = `What are the top 3 risk factors for investing in ${state.selectedStock} right now?`;
+      buttonText = 'Key risk factors';
+      break;
+    case 'forecast':
+      prompt = `Provide a general 12-month market forecast and price outlook for ${state.selectedStock}.`;
+      buttonText = '12-month forecast';
+      break;
+  }
+  
+  addChatMessage('user', buttonText);
+  processAIMessage(prompt);
+}
+
+async function sendChatMessage(text) {
+  if (state.chatBusy) return;
+  state.chatBusy = true;
+  
+  addChatMessage('user', text);
+  await processAIMessage(text);
+}
+
+async function processAIMessage(prompt) {
+  addTypingIndicator();
+  
+  const response = await sendToAI(prompt);
+  
+  $('#typing-indicator')?.remove();
+  streamAIResponse(response, () => { state.chatBusy = false; });
+}
+
+function initChat() {
+  const s = stocks.find(x => x.ticker === state.selectedStock);
+  const greeting = `Hi Alex! I've loaded **${s.ticker}** (${s.name}) into context. Current live price is **${fmtPrice(s.price)}** (${s.changePct >= 0 ? '+' : ''}${s.changePct.toFixed(2)}% today), AI Signal: **${s.signal}** (score ${s.aiScore}/100).\n\nI am now connected to **Gemini AI** via Puter.js as a **Wall Street Analyst**. Ask me for a research note on earnings, financials, risks, or forecasts!`;
+  addChatMessage('ai', greeting);
+}
+
+function addChatMessage(role, text) {
+  const messages = $('#chatMessages');
+  const wrapper = document.createElement('div');
+  wrapper.className = `msg-enter flex gap-3 ${role === 'user' ? 'flex-row-reverse' : ''}`;
+  if (role === 'user') {
+    wrapper.innerHTML = `<div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center text-xs font-bold text-black flex-shrink-0">AK</div><div class="max-w-[80%] bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl rounded-tr-sm px-4 py-2.5 text-sm">${escapeHtml(text)}</div>`;
+  } else {
+    wrapper.innerHTML = `<div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center flex-shrink-0"><i data-lucide="sparkles" class="w-4 h-4 text-black" stroke-width="2.5"></i></div><div class="max-w-[80%] chat-content text-sm text-[var(--text-secondary)]"></div>`;
+  }
+  messages.appendChild(wrapper);
+  if (window.lucide) lucide.createIcons({ attrs: {} });
+  messages.scrollTop = messages.scrollHeight;
+  return wrapper;
+}
+
+function addTypingIndicator() {
+  const messages = $('#chatMessages');
+  const wrapper = document.createElement('div');
+  wrapper.className = 'msg-enter flex gap-3';
+  wrapper.id = 'typing-indicator';
+  wrapper.innerHTML = `<div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center flex-shrink-0"><i data-lucide="sparkles" class="w-4 h-4 text-black" stroke-width="2.5"></i></div><div class="bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5"><span class="typing-dot w-2 h-2 bg-emerald-400 rounded-full inline-block"></span><span class="typing-dot w-2 h-2 bg-emerald-400 rounded-full inline-block"></span><span class="typing-dot w-2 h-2 bg-emerald-400 rounded-full inline-block"></span></div>`;
+  messages.appendChild(wrapper);
+  if (window.lucide) lucide.createIcons({ attrs: {} });
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function escapeHtml(s) { return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function formatMarkdown(text) {
+  let html = escapeHtml(text);
+  html = html.replace(/^### (.+)$/gm, '<h4>$1</h4>');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  const lines = html.split('\n');
+  let inList = false;
+  let out = [];
+  for (let line of lines) {
+    if (line.match(/^- (.+)$/)) { if (!inList) { out.push('<ul>'); inList = true; } out.push('<li>' + line.replace(/^- /, '') + '</li>'); } else { if (inList) { out.push('</ul>'); inList = false; } out.push(line); }
+  }
+  if (inList) out.push('</ul>');
+  html = out.join('\n');
+  html = html.split(/\n\n+/).map(p => p.trim() ? (p.startsWith('<') ? p : '<p>' + p.replace(/\n/g,'<br>') + '</p>') : '').join('');
+  return html;
+}
+
+function streamAIResponse(text, onComplete) {
+  const wrapper = addChatMessage('ai', '');
+  const content = wrapper.querySelector('.chat-content');
+  content.classList.add('stream-cursor');
+  const tokens = text.match(/\S+\s*/g) || [text];
+  let i = 0;
+  let acc = '';
+  function step() {
+    if (i < tokens.length) { acc += tokens[i]; content.innerHTML = formatMarkdown(acc); i++; $('#chatMessages').scrollTop = $('#chatMessages').scrollHeight; setTimeout(step, 14 + Math.random() * 28); }
+    else { content.classList.remove('stream-cursor'); if (onComplete) onComplete(); }
+  }
+  step();
+}
+
+function clearChat() { 
+  $('#chatMessages').innerHTML = ''; 
+  chatHistory = [];
+  initChat(); 
+}
+
+/* ============================================================
+   DASHBOARD RENDERING
+============================================================ */
+function renderTickerTape() {
+  const tape = $('#tickerTape');
+  const items = [...stocks.slice(0, 10), ...stocks.slice(0, 10)].map(s => {
+    const color = s.change >= 0 ? 'text-emerald-400' : 'text-rose-400';
+    const arrow = s.change >= 0 ? '▲' : '▼';
+    return `<div class="flex items-center gap-2 text-xs"><span class="font-mono font-bold text-[var(--text-primary)]">${s.ticker}</span><span class="font-mono ${color}">${s.price.toFixed(2)}</span><span class="${color}">${arrow} ${Math.abs(s.change).toFixed(2)}</span></div>`;
+  }).join('');
+  tape.innerHTML = items;
+}
+
+function renderSectors() {
+  const list = $('#sectorList');
+  list.innerHTML = sectors.map(s => {
+    const color = s.change >= 0 ? 'text-emerald-400' : 'text-rose-400';
+    const width = Math.min(100, Math.abs(s.change) * 30);
+    const barColor = s.change >= 0 ? 'bg-emerald-500' : 'bg-rose-500';
+    return `<div class="flex items-center gap-2"><div class="text-xs text-[var(--text-secondary)] w-24 truncate">${s.name}</div><div class="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden"><div class="h-full ${barColor} rounded-full" style="width:${width}%"></div></div><div class="text-xs font-mono ${color} w-12 text-right">${s.change >= 0 ? '+' : ''}${s.change.toFixed(2)}%</div></div>`;
+  }).join('');
+}
+
+function renderTrending() {
+  const tbody = $('#trendingBody');
+  const top = [...stocks].sort((a,b) => b.aiScore - a.aiScore).slice(0, 10);
+  tbody.innerHTML = top.map(s => {
+    const changeColor = s.change >= 0 ? 'text-emerald-400' : 'text-rose-400';
+    const sparkId = `spark-trend-${s.ticker}`;
+    const scoreColor = s.aiScore >= 80 ? 'text-emerald-400' : s.aiScore >= 60 ? 'text-amber-400' : 'text-rose-400';
+    const isActive = s.ticker === state.selectedStock ? 'bg-emerald-500/[0.05]' : '';
+    const isWatched = state.watchlist.includes(s.ticker);
+    const watchClass = isWatched ? 'bg-amber-500/[0.05]' : isActive;
+    const starClass = isWatched ? 'text-amber-400' : 'text-[var(--text-tertiary)]';
+    const starChar = isWatched ? '★' : '☆';
+    return `<tr class="border-b border-[var(--border)] hover:bg-white/[0.02] cursor-pointer transition-colors ${watchClass}" onclick="selectDashboardStock('${s.ticker}')">
+      <td class="px-5 py-3">
+        <div class="flex items-center gap-2">
+          <div>
+            <div class="font-mono font-bold text-sm">${s.ticker}</div>
+            <div class="text-[11px] text-[var(--text-tertiary)] truncate max-w-[150px]">${s.name}</div>
+          </div>
+          <span onclick="toggleWatchlist('${s.ticker}', event)" class="cursor-pointer text-lg leading-none ${starClass}">${starChar}</span>
+        </div>
+      </td>
+      <td class="text-right px-3 py-3 font-mono text-sm">${fmtPrice(s.price)}</td>
+      <td class="text-right px-3 py-3 font-mono text-sm ${changeColor}">${s.change >= 0 ? '+' : ''}${s.change.toFixed(2)}</td>
+      <td class="px-3 py-3"><div class="flex items-center gap-2 justify-center"><div class="w-12 h-1 bg-white/5 rounded-full overflow-hidden"><div class="h-full ${s.aiScore >= 80 ? 'bg-emerald-500' : s.aiScore >= 60 ? 'bg-amber-500' : 'bg-rose-500'}" style="width:${s.aiScore}%"></div></div><span class="font-mono text-xs font-bold ${scoreColor} w-6 text-right">${s.aiScore}</span></div></td>
+      <td class="text-center px-3 py-3"><span class="${signalClass(s.signal)} text-[10px] px-2 py-1 rounded font-bold whitespace-nowrap">${s.signal.toUpperCase()}</span></td>
+      <td class="px-5 py-3"><div class="h-8 w-24 ml-auto" id="${sparkId}"></div></td>
+    </tr>`;
+  }).join('');
+  top.forEach(s => {
+    const sparkData = s.history.slice(-7).map(d => d.close);
+    const sparkColor = s.change >= 0 ? '#10b981' : '#f43f5e';
+    drawSparkline(`spark-trend-${s.ticker}`, sparkData, sparkColor);
+  });
+}
+
+function renderNews() {
+  const feed = $('#newsFeed');
+  feed.innerHTML = newsItems.map((n, index) => {
+    const sentColor = n.sentiment === 'Positive' ? 'text-emerald-400 bg-emerald-500/15' : n.sentiment === 'Negative' ? 'text-rose-400 bg-rose-500/15' : 'text-gray-300 bg-gray-500/15';
+    const sentLabel = n.sentiment === 'Positive' ? 'Bullish' : n.sentiment === 'Negative' ? 'Bearish' : 'Neutral';
+    return `<article class="p-4 border-b border-[var(--border)] hover:bg-white/[0.02] transition-colors cursor-pointer" onclick="showNewsModal(${index})">
+      <div class="flex items-center gap-2 mb-2 flex-wrap">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">${n.source}</span>
+        <span class="text-[10px] text-[var(--text-tertiary)]">·</span><span class="text-[10px] text-[var(--text-tertiary)]">${n.time}</span>
+        <span class="ml-auto ${sentColor} text-[10px] px-1.5 py-0.5 rounded font-semibold">${sentLabel}</span>
+      </div>
+      <h4 class="text-sm font-semibold leading-snug mb-2">${n.headline}</h4>
+      <p class="text-xs text-[var(--text-secondary)] leading-relaxed mb-2">${n.summary}</p>
+      <div class="flex items-center gap-1.5 flex-wrap">${n.tickers.map(t => `<span class="text-[10px] font-mono bg-white/5 px-1.5 py-0.5 rounded text-[var(--text-secondary)]">$${t}</span>`).join('')}</div>
+    </article>`;
+  }).join('');
+}
+
+function showNewsModal(index) {
+  const n = newsItems[index];
+  if (!n) return;
+  const sentColor = n.sentiment === 'Positive' ? 'text-emerald-400 bg-emerald-500/15' : n.sentiment === 'Negative' ? 'text-rose-400 bg-rose-500/15' : 'text-gray-300 bg-gray-500/15';
+  const sentLabel = n.sentiment === 'Positive' ? 'Bullish' : n.sentiment === 'Negative' ? 'Bearish' : 'Neutral';
+  $('#newsModalContent').innerHTML = `<div class="flex items-center gap-2 mb-4 flex-wrap"><span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">${n.source}</span><span class="text-[10px] text-[var(--text-tertiary)]">·</span><span class="text-[10px] text-[var(--text-tertiary)]">${n.time}</span><span class="ml-auto ${sentColor} text-[10px] px-1.5 py-0.5 rounded font-semibold">${sentLabel}</span></div><h4 class="text-lg font-semibold leading-snug mb-3">${n.headline}</h4><p class="text-sm text-[var(--text-secondary)] leading-relaxed mb-4">${n.summary}</p><div class="pt-4 border-t border-[var(--border)]"><div class="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Related Tickers</div><div class="flex items-center gap-1.5 flex-wrap">${n.tickers.map(t => `<span class="text-xs font-mono bg-white/5 px-2 py-1 rounded text-[var(--text-secondary)]">$${t}</span>`).join('')}</div></div>`;
+  $('#newsModal').classList.remove('hidden');
+  $('#newsModal').classList.add('flex');
+  lucide.createIcons({ attrs: {} });
+}
+
+function closeNewsModal() { $('#newsModal').classList.add('hidden'); $('#newsModal').classList.remove('flex'); }
+
+/* ============================================================
+   AI RESEARCH CHAT LIST
+============================================================ */
+function renderStockList() {
+  const list = $('#stockList');
+  const filtered = stocks.filter(s => {
+    const matchSearch = !state.stockSearch || s.ticker.toLowerCase().includes(state.stockSearch.toLowerCase()) || s.name.toLowerCase().includes(state.stockSearch.toLowerCase());
+    return matchSearch;
+  });
+  list.innerHTML = filtered.map(s => {
+    const active = s.ticker === state.selectedStock;
+    return `<button class="stock-item w-full text-left p-3 border-b border-[var(--border)] hover:bg-white/[0.03] transition-colors ${active ? 'bg-emerald-500/[0.06] border-l-2 border-l-emerald-400' : ''}" data-ticker="${s.ticker}">
+      <div class="flex items-center justify-between mb-1">
+        <div><div class="font-mono font-bold text-sm">${s.ticker}</div><div class="text-[11px] text-[var(--text-tertiary)] truncate max-w-[140px]">${s.name}</div></div>
+        <div class="text-right"><div class="font-mono text-xs">${fmtPrice(s.price)}</div><div class="font-mono text-[11px] ${s.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${s.change >= 0 ? '+' : ''}${s.change.toFixed(2)}</div></div>
+      </div>
+      <div class="flex items-center gap-2 mt-2"><div class="flex-1 h-1 bg-white/5 rounded-full overflow-hidden"><div class="h-full ${s.aiScore >= 80 ? 'bg-emerald-500' : s.aiScore >= 60 ? 'bg-amber-500' : 'bg-rose-500'}" style="width:${s.aiScore}%"></div></div><span class="text-[10px] font-mono text-[var(--text-tertiary)] w-6 text-right">${s.aiScore}</span><span class="${signalClass(s.signal)} text-[9px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap">${s.signal.toUpperCase()}</span></div>
+    </button>`;
+  }).join('');
+  $$('.stock-item').forEach(el => { el.addEventListener('click', () => selectChatTicker(el.dataset.ticker)); });
+}
+
+/* ============================================================
+   SCREENER & PRICING
+============================================================ */
+function setScreenerSort(key) {
+  if (state.screenerSort.key === key) { state.screenerSort.dir = state.screenerSort.dir === 'asc' ? 'desc' : 'asc'; } else { state.screenerSort.key = key; state.screenerSort.dir = 'asc'; }
+  renderScreener();
+}
+
+function updateFilters() {
+  state.filters.signals = [...$$('.signal-filter:checked')].map(x => x.value);
+  state.filters.sector = $('#sectorFilter').value;
+  renderScreener();
+}
+
+function renderScreener() {
+  const filtered = stocks.filter(s => {
+    if (!state.filters.signals.includes(s.signal)) return false;
+    if (state.filters.sector && s.sector !== state.filters.sector) return false;
+    return true;
+  });
+  const { key, dir } = state.screenerSort;
+  filtered.sort((a, b) => {
+    let valA = a[key], valB = b[key];
+    if (typeof valA === 'string') valA = valA.toLowerCase();
+    if (typeof valB === 'string') valB = valB.toLowerCase();
+    if (valA < valB) return dir === 'asc' ? -1 : 1;
+    if (valA > valB) return dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  ['ticker', 'sector', 'price', 'change', 'aiScore', 'signal'].forEach(k => { const iconEl = document.getElementById(`sort-icon-${k}`); if (iconEl) iconEl.innerHTML = ''; });
+  const activeIconEl = document.getElementById(`sort-icon-${key}`);
+  if (activeIconEl) activeIconEl.innerHTML = `<i data-lucide="${dir === 'asc' ? 'chevron-up' : 'chevron-down'}" class="w-3 h-3 inline-block ml-1"></i>`;
+  $('#resultCount').textContent = filtered.length;
+  const body = $('#screenerBody');
+  if (!filtered.length) { body.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-[var(--text-tertiary)]">No stocks match your filters</td></tr>`; $('#screenerMobileList').innerHTML = `<div class="text-center py-12 text-[var(--text-tertiary)]">No stocks match your filters</div>`; if (window.lucide) lucide.createIcons({ attrs: {} }); return; }
+  body.innerHTML = filtered.map(s => {
+    const changeColor = s.change >= 0 ? 'text-emerald-400' : 'text-rose-400';
+    const scoreColor = s.aiScore >= 80 ? 'text-emerald-400' : s.aiScore >= 60 ? 'text-amber-400' : 'text-rose-400';
+    const isActive = s.ticker === state.selectedStock ? 'bg-emerald-500/[0.05]' : '';
+    const isWatched = state.watchlist.includes(s.ticker);
+    const watchClass = isWatched ? 'bg-amber-500/[0.05]' : isActive;
+    const starClass = isWatched ? 'text-amber-400' : 'text-[var(--text-tertiary)]';
+    const starChar = isWatched ? '★' : '☆';
+    return `<tr class="border-b border-[var(--border)] hover:bg-white/[0.02] cursor-pointer transition-colors ${watchClass}" onclick="selectDashboardStock('${s.ticker}')">
+      <td class="px-4 py-3">
+        <div class="flex items-center gap-2">
+          <span onclick="toggleWatchlist('${s.ticker}', event)" class="cursor-pointer text-base leading-none ${starClass}">${starChar}</span>
+          <div>
+            <div class="font-mono font-bold text-sm">${s.ticker}</div>
+            <div class="text-[11px] text-[var(--text-tertiary)] truncate max-w-[120px]">${s.name}</div>
+          </div>
+        </div>
+      </td>
+      <td class="text-left px-3 py-3 text-xs text-[var(--text-secondary)]">${s.sector}</td>
+      <td class="text-right px-3 py-3 font-mono text-sm">${fmtPrice(s.price)}</td>
+      <td class="text-right px-3 py-3 font-mono text-sm ${changeColor}">${s.change >= 0 ? '+' : ''}${s.change.toFixed(2)} (${s.changePct >= 0 ? '+' : ''}${s.changePct.toFixed(2)}%)</td>
+      <td class="text-center px-3 py-3"><span class="font-mono text-xs font-bold ${scoreColor}">${s.aiScore}</span></td>
+      <td class="text-center px-4 py-3"><span class="${signalClass(s.signal)} text-[10px] px-2 py-1 rounded font-bold whitespace-nowrap">${s.signal.toUpperCase()}</span></td>
+    </tr>`;
+  }).join('');
+  
+  const mobileList = $('#screenerMobileList');
+  mobileList.innerHTML = filtered.map(s => {
+    const changeColor = s.change >= 0 ? 'text-emerald-400' : 'text-rose-400';
+    const scoreColor = s.aiScore >= 80 ? 'text-emerald-400' : s.aiScore >= 60 ? 'text-amber-400' : 'text-rose-400';
+    const isWatched = state.watchlist.includes(s.ticker);
+    const starClass = isWatched ? 'text-amber-400' : 'text-[var(--text-tertiary)]';
+    const starChar = isWatched ? '★' : '☆';
+    return `<div class="card p-3.5 cursor-pointer" onclick="selectDashboardStock('${s.ticker}')">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <span onclick="toggleWatchlist('${s.ticker}', event)" class="cursor-pointer text-base leading-none ${starClass}">${starChar}</span>
+          <div><span class="font-mono font-bold text-sm">${s.ticker}</span><span class="text-xs text-[var(--text-tertiary)] ml-2">${s.sector}</span></div>
+        </div>
+        <span class="${signalClass(s.signal)} text-[10px] px-2 py-0.5 rounded font-bold">${s.signal.toUpperCase()}</span>
+      </div>
+      <div class="flex items-center justify-between text-sm">
+        <span class="font-mono">${fmtPrice(s.price)}</span>
+        <span class="font-mono ${changeColor}">${s.change >= 0 ? '+' : ''}${s.change.toFixed(2)} (${s.changePct >= 0 ? '+' : ''}${s.changePct.toFixed(2)}%)</span>
+        <span class="font-mono font-bold ${scoreColor}">Score: ${s.aiScore}</span>
+      </div>
+    </div>`;
+  }).join('');
+  
+  if (window.lucide) lucide.createIcons({ attrs: {} });
+}
+
+function resetFilters() {
+  $$('.signal-filter').forEach(cb => cb.checked = true);
+  $('#sectorFilter').value = '';
+  updateFilters();
+}
+
+function setBillingCycle(cycle) {
+  state.billingCycle = cycle;
+  $$('.billing-toggle').forEach(btn => {
+    if (btn.dataset.cycle === cycle) {
+      btn.className = 'billing-toggle px-5 py-2 rounded-full text-sm font-medium transition-all bg-emerald-500/20 text-emerald-400';
+    } else {
+      btn.className = 'billing-toggle px-5 py-2 rounded-full text-sm font-medium transition-all text-[var(--text-secondary)]';
+    }
+  });
+  if (cycle === 'annual') {
+    $('#proPrice').textContent = '$39';
+    $('#proCycle').textContent = '/month billed annually';
+    $('#instPrice').textContent = '$239';
+    $('#instCycle').textContent = '/month billed annually';
+  } else {
+    $('#proPrice').textContent = '$49';
+    $('#proCycle').textContent = '/month';
+    $('#instPrice').textContent = '$299';
+    $('#instCycle').textContent = '/month';
+  }
+}
+
+/* ============================================================
+   INITIALIZATION
+============================================================ */
+window.addEventListener('DOMContentLoaded', async () => {
+  console.log("AlphaEdge Initializing...");
+  
+  const savedTicker = localStorage.getItem('lastTicker');
+  if (savedTicker && stocks.some(s => s.ticker === savedTicker)) {
+    state.selectedStock = savedTicker;
+  }
+  
+  const savedTf = localStorage.getItem('lastTimeframe');
+  if (savedTf) {
+    state.activeTimeframe = savedTf;
+  }
+  
+  if (window.lucide) lucide.createIcons({ attrs: {} });
+  
+  setInterval(() => {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
+    const timeEl = $('#liveTime');
+    if (timeEl) timeEl.textContent = timeStr;
+  }, 1000);
+  
+  renderTickerTape();
+  renderTrending();
+  renderNews();
+  renderSectors();
+  updateWatchlistBadge();
+  
+  const initialStock = stocks.find(s => s.ticker === state.selectedStock) || stocks[0];
+  $('#chartTicker').textContent = initialStock.ticker;
+  $('#chartName').textContent = initialStock.name;
+  $('#chartSignal').textContent = initialStock.signal.toUpperCase();
+  $('#chartSignal').className = signalClass(initialStock.signal) + " text-[10px] px-1.5 py-0.5 rounded font-semibold";
+  $('#chartPrice').textContent = '$' + initialStock.price.toFixed(2);
+  const isUp = initialStock.change >= 0;
+  $('#chartChange').textContent = `${isUp ? '+' : ''}${initialStock.change.toFixed(2)} (${isUp ? '+' : ''}${initialStock.changePct.toFixed(2)}%)`;
+  $('#chartChange').className = `font-mono text-sm ${isUp ? 'text-emerald-400' : 'text-rose-400'}`;
+  updateActiveCard(initialStock.ticker);
+  
+  await changeTimeframe(state.activeTimeframe);
+  
+  fetchRealTimeQuotes();
+  setInterval(fetchRealTimeQuotes, 30000);
+});
+
+</script>
+</body>
+</html>
