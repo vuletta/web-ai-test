@@ -404,10 +404,10 @@
             <div class="flex items-center justify-between"><h3 class="font-display font-semibold">Filters</h3><button onclick="resetFilters()" class="text-xs text-rose-400 hover:underline">Reset</button></div>
             <div><label class="text-xs font-medium text-[var(--text-secondary)] mb-2 block">AI Signal</label><div class="space-y-1.5">
               <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 px-2 py-1 rounded"><input type="checkbox" class="signal-filter checkbox-emerald" value="Strong Buy" checked onchange="updateFilters()" /><span class="signal-strong-buy text-[10px] px-1.5 py-0.5 rounded font-semibold">STRONG BUY</span></label>
-              <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 px=2 py-1 rounded"><input type="checkbox" class="signal-filter checkbox-emerald" value="Buy" checked onchange="updateFilters()" /><span class="signal-buy text-[10px] px-1.5 py-0.5 rounded font-semibold">BUY</span></label>
-              <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 px=2 py-1 rounded"><input type="checkbox" class="signal-filter checkbox-emerald" value="Hold" checked onchange="updateFilters()" /><span class="signal-hold text-[10px] px-1.5 py-0.5 rounded font-semibold">HOLD</span></label>
-              <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 px=2 py-1 rounded"><input type="checkbox" class="signal-filter checkbox-emerald" value="Sell" checked onchange="updateFilters()" /><span class="signal-sell text-[10px] px-1.5 py-0.5 rounded font-semibold">SELL</span></label>
-              <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 px=2 py-1 rounded"><input type="checkbox" class="signal-filter checkbox-emerald" value="Strong Sell" checked onchange="updateFilters()" /><span class="signal-strong-sell text-[10px] px-1.5 py-0.5 rounded font-semibold">STRONG SELL</span></label>
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 px-2 py-1 rounded"><input type="checkbox" class="signal-filter checkbox-emerald" value="Buy" checked onchange="updateFilters()" /><span class="signal-buy text-[10px] px-1.5 py-0.5 rounded font-semibold">BUY</span></label>
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 px-2 py-1 rounded"><input type="checkbox" class="signal-filter checkbox-emerald" value="Hold" checked onchange="updateFilters()" /><span class="signal-hold text-[10px] px-1.5 py-0.5 rounded font-semibold">HOLD</span></label>
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 px-2 py-1 rounded"><input type="checkbox" class="signal-filter checkbox-emerald" value="Sell" checked onchange="updateFilters()" /><span class="signal-sell text-[10px] px-1.5 py-0.5 rounded font-semibold">SELL</span></label>
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 px-2 py-1 rounded"><input type="checkbox" class="signal-filter checkbox-emerald" value="Strong Sell" checked onchange="updateFilters()" /><span class="signal-strong-sell text-[10px] px-1.5 py-0.5 rounded font-semibold">STRONG SELL</span></label>
             </div></div>
             <div>
               <label class="text-xs font-medium text-[var(--text-secondary)] mb-2 block">Sector</label>
@@ -604,7 +604,7 @@ function fmtPrice(n){ return '$' + n.toFixed(2); }
 function signalClass(s){ return 'signal-' + s.toLowerCase().replace(' ','-'); }
 
 /* ============================================================
-   SPARKLINE DRAWING FUNCTION (FIX BUG 1)
+   SPARKLINE DRAWING FUNCTION
 ============================================================ */
 function drawSparkline(containerId, data, color) {
   const container = document.getElementById(containerId);
@@ -700,7 +700,7 @@ document.addEventListener('click', (e) => {
 });
 
 /* ============================================================
-   SEARCH BAR LOGIC (FIX BUG 2)
+   SEARCH BAR LOGIC
 ============================================================ */
 function handleSearchKey(event) {
   if (event.key === 'Enter') {
@@ -725,7 +725,6 @@ async function handleSearch() {
     return;
   }
   
-  // Not found in local array: create a simulated asset on the fly
   let seed = 0;
   for (let i = 0; i < ticker.length; i++) {
     seed += ticker.charCodeAt(i) * (i + 1);
@@ -1334,7 +1333,7 @@ function clearChat() {
 }
 
 /* ============================================================
-   DASHBOARD RENDERING
+   DASHBOARD & SCREENER RENDERING (WITH CLICKABLE ROWS/CELLS)
 ============================================================ */
 function renderTickerTape() {
   const tape = $('#tickerTape');
@@ -1369,7 +1368,7 @@ function renderTrending() {
     const starClass = isWatched ? 'text-amber-400' : 'text-[var(--text-tertiary)]';
     const starChar = isWatched ? '★' : '☆';
     return `<tr class="border-b border-[var(--border)] hover:bg-white/[0.02] cursor-pointer transition-colors ${watchClass}" onclick="selectDashboardStock('${s.ticker}')">
-      <td class="px-5 py-3">
+      <td class="px-5 py-3 cursor-pointer" onclick="selectDashboardStock('${s.ticker}')">
         <div class="flex items-center gap-2">
           <div>
             <div class="font-mono font-bold text-sm">${s.ticker}</div>
@@ -1378,11 +1377,11 @@ function renderTrending() {
           <span onclick="toggleWatchlist('${s.ticker}', event)" class="cursor-pointer text-lg leading-none ${starClass}">${starChar}</span>
         </div>
       </td>
-      <td class="text-right px-3 py-3 font-mono text-sm">${fmtPrice(s.price)}</td>
-      <td class="text-right px-3 py-3 font-mono text-sm ${changeColor}">${s.change >= 0 ? '+' : ''}${s.change.toFixed(2)}</td>
-      <td class="px-3 py-3"><div class="flex items-center gap-2 justify-center"><div class="w-12 h-1 bg-white/5 rounded-full overflow-hidden"><div class="h-full ${s.aiScore >= 80 ? 'bg-emerald-500' : s.aiScore >= 60 ? 'bg-amber-500' : 'bg-rose-500'}" style="width:${s.aiScore}%"></div></div><span class="font-mono text-xs font-bold ${scoreColor} w-6 text-right">${s.aiScore}</span></div></td>
-      <td class="text-center px-3 py-3"><span class="${signalClass(s.signal)} text-[10px] px-2 py-1 rounded font-bold whitespace-nowrap">${s.signal.toUpperCase()}</span></td>
-      <td class="px-5 py-3"><div class="h-8 w-24 ml-auto" id="${sparkId}"></div></td>
+      <td class="text-right px-3 py-3 font-mono text-sm cursor-pointer" onclick="selectDashboardStock('${s.ticker}')">${fmtPrice(s.price)}</td>
+      <td class="text-right px-3 py-3 font-mono text-sm ${changeColor} cursor-pointer" onclick="selectDashboardStock('${s.ticker}')">${s.change >= 0 ? '+' : ''}${s.change.toFixed(2)}</td>
+      <td class="px-3 py-3 cursor-pointer" onclick="selectDashboardStock('${s.ticker}')"><div class="flex items-center gap-2 justify-center"><div class="w-12 h-1 bg-white/5 rounded-full overflow-hidden"><div class="h-full ${s.aiScore >= 80 ? 'bg-emerald-500' : s.aiScore >= 60 ? 'bg-amber-500' : 'bg-rose-500'}" style="width:${s.aiScore}%"></div></div><span class="font-mono text-xs font-bold ${scoreColor} w-6 text-right">${s.aiScore}</span></div></td>
+      <td class="text-center px-3 py-3 cursor-pointer" onclick="selectDashboardStock('${s.ticker}')"><span class="${signalClass(s.signal)} text-[10px] px-2 py-1 rounded font-bold whitespace-nowrap">${s.signal.toUpperCase()}</span></td>
+      <td class="px-5 py-3 cursor-pointer" onclick="selectDashboardStock('${s.ticker}')"><div class="h-8 w-24 ml-auto" id="${sparkId}"></div></td>
     </tr>`;
   }).join('');
   top.forEach(s => {
@@ -1390,6 +1389,64 @@ function renderTrending() {
     const sparkColor = s.change >= 0 ? '#10b981' : '#f43f5e';
     drawSparkline(`spark-trend-${s.ticker}`, sparkData, sparkColor);
   });
+}
+
+function renderScreener() {
+  const tbody = $('#screenerBody');
+  const mobileList = $('#screenerMobileList');
+  
+  const filtered = stocks.filter(s => {
+    const matchSignal = state.filters.signals.includes(s.signal);
+    const matchSector = !state.filters.sector || s.sector === state.filters.sector;
+    const matchSearch = !state.stockSearch || s.ticker.toLowerCase().includes(state.stockSearch.toLowerCase()) || s.name.toLowerCase().includes(state.stockSearch.toLowerCase());
+    return matchSignal && matchSector && matchSearch;
+  });
+  
+  filtered.sort((a, b) => {
+    let valA = a[state.screenerSort.key];
+    let valB = b[state.screenerSort.key];
+    if (typeof valA === 'string') {
+      valA = valA.toLowerCase();
+      valB = valB.toLowerCase();
+    }
+    if (valA < valB) return state.screenerSort.dir === 'asc' ? -1 : 1;
+    if (valA > valB) return state.screenerSort.dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  
+  $('#resultCount').textContent = filtered.length;
+  
+  tbody.innerHTML = filtered.map(s => {
+    const changeColor = s.change >= 0 ? 'text-emerald-400' : 'text-rose-400';
+    const scoreColor = s.aiScore >= 80 ? 'text-emerald-400' : s.aiScore >= 60 ? 'text-amber-400' : 'text-rose-400';
+    return `<tr class="border-b border-[var(--border)] hover:bg-white/[0.02] cursor-pointer transition-colors" onclick="selectDashboardStock('${s.ticker}')">
+      <td class="px-4 py-3 font-mono font-bold text-sm cursor-pointer" onclick="selectDashboardStock('${s.ticker}')">${s.ticker}</td>
+      <td class="px-3 py-3 text-xs text-[var(--text-secondary)] cursor-pointer" onclick="selectDashboardStock('${s.ticker}')">${s.sector}</td>
+      <td class="text-right px-3 py-3 font-mono text-sm cursor-pointer" onclick="selectDashboardStock('${s.ticker}')">${fmtPrice(s.price)}</td>
+      <td class="text-right px-3 py-3 font-mono text-sm ${changeColor} cursor-pointer" onclick="selectDashboardStock('${s.ticker}')">${s.change >= 0 ? '+' : ''}${s.change.toFixed(2)}</td>
+      <td class="px-3 py-3 text-center cursor-pointer" onclick="selectDashboardStock('${s.ticker}')">
+        <div class="flex items-center gap-2 justify-center">
+          <div class="w-12 h-1 bg-white/5 rounded-full overflow-hidden"><div class="h-full ${s.aiScore >= 80 ? 'bg-emerald-500' : s.aiScore >= 60 ? 'bg-amber-500' : 'bg-rose-500'}" style="width:${s.aiScore}%"></div></div>
+          <span class="font-mono text-xs font-bold ${scoreColor} w-6 text-right">${s.aiScore}</span>
+        </div>
+      </td>
+      <td class="text-center px-4 py-3 cursor-pointer" onclick="selectDashboardStock('${s.ticker}')"><span class="${signalClass(s.signal)} text-[10px] px-2 py-1 rounded font-bold whitespace-nowrap">${s.signal.toUpperCase()}</span></td>
+    </tr>`;
+  }).join('');
+  
+  mobileList.innerHTML = filtered.map(s => {
+    const changeColor = s.change >= 0 ? 'text-emerald-400' : 'text-rose-400';
+    return `<div class="card p-4 cursor-pointer hover-lift" onclick="selectDashboardStock('${s.ticker}')">
+      <div class="flex items-center justify-between mb-2">
+        <div><span class="font-mono font-bold text-sm">${s.ticker}</span><span class="text-xs text-[var(--text-tertiary)] ml-2">${s.name}</span></div>
+        <span class="${signalClass(s.signal)} text-[10px] px-2 py-0.5 rounded font-bold">${s.signal.toUpperCase()}</span>
+      </div>
+      <div class="flex items-center justify-between font-mono">
+        <span class="text-sm font-bold">${fmtPrice(s.price)}</span>
+        <span class="text-xs ${changeColor}">${s.change >= 0 ? '+' : ''}${s.change.toFixed(2)} (${s.changePct >= 0 ? '+' : ''}${s.changePct.toFixed(2)}%)</span>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function renderNews() {
@@ -1415,40 +1472,43 @@ function showNewsModal(index) {
   if (!n) return;
   const sentColor = n.sentiment === 'Positive' ? 'text-emerald-400 bg-emerald-500/15' : n.sentiment === 'Negative' ? 'text-rose-400 bg-rose-500/15' : 'text-gray-300 bg-gray-500/15';
   const sentLabel = n.sentiment === 'Positive' ? 'Bullish' : n.sentiment === 'Negative' ? 'Bearish' : 'Neutral';
-  $('#newsModalContent').innerHTML = `<div class="flex items-center gap-2 mb-4 flex-wrap"><span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">${n.source}</span><span class="text-[10px] text-[var(--text-tertiary)]">·</span><span class="text-[10px] text-[var(--text-tertiary)]">${n.time}</span><span class="ml-auto ${sentColor} text-[10px] px-1.5 py-0.5 rounded font-semibold">${sentLabel}</span></div><h4 class="text-lg font-semibold leading-snug mb-3">${n.headline}</h4><p class="text-sm text-[var(--text-secondary)] leading-relaxed mb-4">${n.summary}</p><div class="pt-4 border-t border-[var(--border)]"><div class="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Related Tickers</div><div class="flex items-center gap-1.5 flex-wrap">${n.tickers.map(t => `<span class="text-xs font-mono bg-white/5 px-2 py-1 rounded text-emerald-400 font-semibold">$${t}</span>`).join('')}</div></div>`;
+  $('#newsModalContent').innerHTML = `<div class="flex items-center gap-2 mb-4 flex-wrap"><span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">${n.source}</span><span class="text-[10px] text-[var(--text-tertiary)]">·</span><span class="text-[10px] text-[var(--text-tertiary)]">${n.time}</span><span class="ml-auto ${sentColor} text-[10px] px-1.5 py-0.5 rounded font-semibold">${sentLabel}</span></div><h4 class="text-lg font-semibold leading-snug mb-3">${n.headline}</h4><p class="text-sm text-[var(--text-secondary)] leading-relaxed mb-4">${n.summary}</p><div class="pt-4 border-t border-[var(--border)]"><div class="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Related Tickers</div><div class="flex items-center gap-1.5">${n.tickers.map(t => `<button onclick="closeNewsModal(); selectDashboardStock('${t}')" class="text-xs font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded hover:bg-emerald-500/20">$${t}</button>`).join('')}</div></div>`;
   $('#newsModal').classList.remove('hidden');
   $('#newsModal').classList.add('flex');
 }
 
 function closeNewsModal() {
-  $('#newsModal').classList.add('hidden');
   $('#newsModal').classList.remove('flex');
+  $('#newsModal').classList.add('hidden');
 }
 
 function renderStockList() {
   const container = $('#stockList');
-  const search = state.stockSearch.toLowerCase();
-  const filtered = stocks.filter(s => s.ticker.toLowerCase().includes(search) || s.name.toLowerCase().includes(search));
+  const query = state.stockSearch.toLowerCase();
+  const filtered = stocks.filter(s => s.ticker.toLowerCase().includes(query) || s.name.toLowerCase().includes(query));
   
   container.innerHTML = filtered.map(s => {
     const isSelected = s.ticker === state.selectedStock;
-    const bgClass = isSelected ? 'bg-emerald-500/10 border-emerald-500/40' : 'hover:bg-white/[0.02] border-transparent';
     const changeColor = s.change >= 0 ? 'text-emerald-400' : 'text-rose-400';
-    return `<div class="p-3 border-b border-[var(--border)] cursor-pointer transition-colors border-l-2 ${bgClass}" onclick="selectResearchStock('${s.ticker}')">
+    return `<div onclick="selectResearchStock('${s.ticker}')" class="p-3 border-b border-[var(--border)] cursor-pointer transition-colors ${isSelected ? 'bg-emerald-500/10 border-l-2 border-l-emerald-400' : 'hover:bg-white/5'}">
       <div class="flex items-center justify-between mb-1">
-        <span class="font-mono font-bold text-sm">${s.ticker}</span>
-        <span class="font-mono text-xs ${changeColor}">${s.change >= 0 ? '+' : ''}${s.change.toFixed(2)}%</span>
+        <div class="flex items-center gap-2">
+          <span class="font-mono font-bold text-sm">${s.ticker}</span>
+          <span class="${signalClass(s.signal)} text-[9px] px-1.5 py-0.2 rounded font-semibold">${s.signal}</span>
+        </div>
+        <span class="font-mono text-xs font-bold">${fmtPrice(s.price)}</span>
       </div>
-      <div class="text-xs text-[var(--text-secondary)] truncate">${s.name}</div>
+      <div class="flex items-center justify-between text-xs text-[var(--text-secondary)]">
+        <span class="truncate max-w-[160px]">${s.name}</span>
+        <span class="font-mono ${changeColor}">${s.change >= 0 ? '+' : ''}${s.change.toFixed(2)}</span>
+      </div>
     </div>`;
   }).join('');
 }
 
 function updateFilters() {
-  const signalCheckboxes = document.querySelectorAll('.signal-filter');
-  const activeSignals = [];
-  signalCheckboxes.forEach(cb => { if (cb.checked) activeSignals.push(cb.value); });
-  state.filters.signals = activeSignals;
+  const checkboxes = document.querySelectorAll('.signal-filter');
+  state.filters.signals = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
   state.filters.sector = $('#sectorFilter').value;
   renderScreener();
 }
@@ -1473,75 +1533,19 @@ function setScreenerSort(key) {
     const icon = document.getElementById(`sort-icon-${k}`);
     if (icon) icon.textContent = '';
   });
-  
-  const currentIcon = document.getElementById(`sort-icon-${key}`);
-  if (currentIcon) currentIcon.textContent = state.screenerSort.dir === 'asc' ? ' ▲' : ' ▼';
+  const activeIcon = document.getElementById(`sort-icon-${key}`);
+  if (activeIcon) activeIcon.textContent = state.screenerSort.dir === 'asc' ? '▲' : '▼';
   
   renderScreener();
-}
-
-function renderScreener() {
-  const tbody = $('#screenerBody');
-  const mobileList = $('#screenerMobileList');
-  
-  let filtered = stocks.filter(s => {
-    const matchSignal = state.filters.signals.includes(s.signal);
-    const matchSector = !state.filters.sector || s.sector === state.filters.sector;
-    return matchSignal && matchSector;
-  });
-  
-  filtered.sort((a, b) => {
-    let valA = a[state.screenerSort.key];
-    let valB = b[state.screenerSort.key];
-    if (typeof valA === 'string') {
-      valA = valA.toLowerCase();
-      valB = valB.toLowerCase();
-    }
-    if (valA < valB) return state.screenerSort.dir === 'asc' ? -1 : 1;
-    if (valA > valB) return state.screenerSort.dir === 'asc' ? 1 : -1;
-    return 0;
-  });
-  
-  $('#resultCount').textContent = filtered.length;
-  
-  tbody.innerHTML = filtered.map(s => {
-    const changeColor = s.change >= 0 ? 'text-emerald-400' : 'text-rose-400';
-    const scoreColor = s.aiScore >= 80 ? 'text-emerald-400' : s.aiScore >= 60 ? 'text-amber-400' : 'text-rose-400';
-    return `<tr class="border-b border-[var(--border)] hover:bg-white/[0.02] cursor-pointer transition-colors" onclick="selectDashboardStock('${s.ticker}')">
-      <td class="px-4 py-3">
-        <div class="font-mono font-bold text-sm">${s.ticker}</div>
-        <div class="text-[11px] text-[var(--text-tertiary)] truncate max-w-[150px]">${s.name}</div>
-      </td>
-      <td class="px-3 py-3 text-xs text-[var(--text-secondary)]">${s.sector}</td>
-      <td class="text-right px-3 py-3 font-mono text-sm">${fmtPrice(s.price)}</td>
-      <td class="text-right px-3 py-3 font-mono text-sm ${changeColor}">${s.change >= 0 ? '+' : ''}${s.change.toFixed(2)} (${s.changePct >= 0 ? '+' : ''}${s.changePct.toFixed(2)}%)</td>
-      <td class="px-3 py-3"><div class="flex items-center gap-2 justify-center"><div class="w-12 h-1 bg-white/5 rounded-full overflow-hidden"><div class="h-full ${s.aiScore >= 80 ? 'bg-emerald-500' : s.aiScore >= 60 ? 'bg-amber-500' : 'bg-rose-500'}" style="width:${s.aiScore}%"></div></div><span class="font-mono text-xs font-bold ${scoreColor} w-6 text-right">${s.aiScore}</span></div></td>
-      <td class="text-center px-4 py-3"><span class="${signalClass(s.signal)} text-[10px] px-2.5 py-1 rounded font-bold whitespace-nowrap">${s.signal.toUpperCase()}</span></td>
-    </tr>`;
-  }).join('');
-  
-  mobileList.innerHTML = filtered.map(s => {
-    const changeColor = s.change >= 0 ? 'text-emerald-400' : 'text-rose-400';
-    return `<div class="card p-3 cursor-pointer" onclick="selectDashboardStock('${s.ticker}')">
-      <div class="flex items-center justify-between mb-1">
-        <div><span class="font-mono font-bold text-sm">${s.ticker}</span><span class="text-xs text-[var(--text-tertiary)] ml-2">${s.sector}</span></div>
-        <span class="${signalClass(s.signal)} text-[10px] px-2 py-0.5 rounded font-bold">${s.signal.toUpperCase()}</span>
-      </div>
-      <div class="flex items-center justify-between text-xs mt-2">
-        <span class="text-[var(--text-secondary)]">${s.name}</span>
-        <div class="text-right"><span class="font-mono font-bold">${fmtPrice(s.price)}</span><span class="font-mono ml-2 ${changeColor}">${s.change >= 0 ? '+' : ''}${s.change.toFixed(2)}%</span></div>
-      </div>
-    </div>`;
-  }).join('');
 }
 
 function setBillingCycle(cycle) {
   state.billingCycle = cycle;
   document.querySelectorAll('.billing-toggle').forEach(btn => {
     if (btn.dataset.cycle === cycle) {
-      btn.className = "billing-toggle px-5 py-2 rounded-full text-sm font-medium transition-all bg-emerald-500/20 text-emerald-400";
+      btn.className = 'billing-toggle px-5 py-2 rounded-full text-sm font-medium transition-all bg-emerald-500/20 text-emerald-400';
     } else {
-      btn.className = "billing-toggle px-5 py-2 rounded-full text-sm font-medium transition-all text-[var(--text-secondary)]";
+      btn.className = 'billing-toggle px-5 py-2 rounded-full text-sm font-medium transition-all text-[var(--text-secondary)]';
     }
   });
   
@@ -1564,23 +1568,32 @@ setInterval(() => {
   if (timeEl) timeEl.textContent = now.toTimeString().split(' ')[0];
 }, 1000);
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   if (window.lucide) lucide.createIcons({ attrs: {} });
   
+  const savedTicker = localStorage.getItem('lastTicker');
+  if (savedTicker && stocks.some(s => s.ticker === savedTicker)) {
+    state.selectedStock = savedTicker;
+  }
+  
+  const savedTf = localStorage.getItem('lastTimeframe');
+  if (savedTf) {
+    state.activeTimeframe = savedTf;
+  }
+  
+  updateWatchlistBadge();
   renderTickerTape();
   renderTrending();
   renderNews();
   renderSectors();
   
-  drawSparkline('spark-sp500', [5120,5158,5172,5149,5188,5210,5198,5232,5247], '#10b981');
-  drawSparkline('spark-nasdaq', [16480,16590,16642,16598,16710,16788,16832], '#10b981');
-  drawSparkline('spark-vix', [15.8,15.4,15.6,15.2,14.9,15.1,14.82], '#fb7185');
+  await selectDashboardStock(state.selectedStock);
   
-  const lastTicker = localStorage.getItem('lastTicker') || 'NVDA';
-  selectDashboardStock(lastTicker);
-  
-  setInterval(fetchRealTimeQuotes, 30000);
+  setInterval(() => {
+    fetchRealTimeQuotes();
+  }, 15000);
 });
 </script>
 </body>
 </html>
+<!-- Reference Links: [Finnhub API Documentation](https://finnhub.io/docs/api), [Tailwind CSS Documentation](https://tailwindcss.com/docs), [Puter.js Documentation](https://puter.com/docs) -->
