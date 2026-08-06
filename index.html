@@ -1369,6 +1369,7 @@ function renderSectors() {
 function renderTrending() {
   const tbody = $('#trendingBody');
   const top = [...stocks].sort((a,b) => b.aiScore - a.aiScore).slice(0, 10);
+  
   tbody.innerHTML = top.map(s => {
     const changeColor = s.change >= 0 ? 'text-emerald-400' : 'text-rose-400';
     const sparkId = `spark-trend-${s.ticker}`;
@@ -1378,7 +1379,8 @@ function renderTrending() {
     const watchClass = isWatched ? 'bg-amber-500/[0.05]' : isActive;
     const starClass = isWatched ? 'text-amber-400' : 'text-[var(--text-tertiary)]';
     const starChar = isWatched ? '★' : '☆';
-    return `<tr class="border-b border-[var(--border)] hover:bg-white/[0.02] cursor-pointer transition-colors ${watchClass}" onclick="selectDashboardStock('${s.ticker}')">
+    
+    return `<tr onclick="selectDashboardStock('${s.ticker}')" class="cursor-pointer hover:bg-white/[0.02] border-b border-[var(--border)] transition-colors ${watchClass}">
       <td class="px-5 py-3">
         <div class="flex items-center gap-2">
           <div>
@@ -1395,10 +1397,15 @@ function renderTrending() {
       <td class="px-5 py-3"><div class="h-8 w-24 ml-auto" id="${sparkId}"></div></td>
     </tr>`;
   }).join('');
+  
   top.forEach(s => {
-    const sparkData = s.history.slice(-7).map(d => d.close);
-    const sparkColor = s.change >= 0 ? '#10b981' : '#f43f5e';
-    drawSparkline(`spark-trend-${s.ticker}`, sparkData, sparkColor);
+    try {
+      const sparkData = s.history.slice(-7).map(d => d.close);
+      const sparkColor = s.change >= 0 ? '#10b981' : '#f43f5e';
+      drawSparkline(`spark-trend-${s.ticker}`, sparkData, sparkColor);
+    } catch (e) {
+      console.error('Error rendering sparkline for', s.ticker, e);
+    }
   });
 }
 
@@ -1410,51 +1417,60 @@ function renderNews() {
     return `<article class="p-4 border-b border-[var(--border)] hover:bg-white/[0.02] transition-colors cursor-pointer" onclick="showNewsModal(${index})">
       <div class="flex items-center gap-2 mb-2 flex-wrap">
         <span class="text-[10px] text-[var(--text-secondary)] font-mono">${n.time}</span>
-        <span class="text-[10px] px-1.5 py-0.5 rounded font-semibold ${sentColor}">${sentLabel}</span>
+        <span class="${sentColor} text-[10px] px-1.5 py-0.5 rounded font-semibold">${sentLabel}</span>
       </div>
       <h4 class="font-display font-semibold text-sm mb-1">${n.headline}</h4>
-      <p class="text-xs text-[var(--text-tertiary)] line-clamp-2">${n.summary}</p>
+      <p class="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2">${n.summary}</p>
     </article>`;
   }).join('');
 }
 
 function showNewsModal(index) {
   const n = newsItems[index];
-  const modal = $('#newsModal');
-  const content = $('#newsModalContent');
-  const sentColor = n.sentiment === 'Positive' ? 'text-emerald-400 bg-emerald-500/15' : n.sentiment === 'Negative' ? 'text-rose-400 bg-rose-500/15' : 'text-gray-300 bg-gray-500/15';
-  content.innerHTML = `
-    <div class="flex items-center gap-2 mb-4">
-      <span class="text-xs font-semibold px-2 py-1 rounded bg-[var(--bg-elevated)] border border-[var(--border)]">${n.source}</span>
-      <span class="text-[10px] px-1.5 py-0.5 rounded font-semibold ${sentColor}">${n.sentiment}</span>
-      <span class="text-xs text-[var(--text-tertiary)] ml-auto">${n.time}</span>
+  let content = `
+    <div class="flex items-center gap-2 mb-3">
+      <span class="text-[10px] text-[var(--text-secondary)] font-mono">${n.time} &bull; ${n.source}</span>
     </div>
-    <h2 class="font-display text-xl font-bold mb-4">${n.headline}</h2>
-    <p class="text-sm text-[var(--text-secondary)] leading-relaxed mb-6">${n.summary}</p>
-    <div class="flex items-center gap-2">
-      ${n.tickers.map(t => `<button class="px-3 py-1.5 bg-emerald-500/10 text-emerald-400 text-xs font-mono font-bold rounded hover:bg-emerald-500/20 transition-colors" onclick="closeNewsModal(); selectDashboardStock('${t}')">${t}</button>`).join('')}
-    </div>
+    <h2 class="text-xl font-bold mb-4 font-display">${n.headline}</h2>
+    <p class="text-sm text-[var(--text-secondary)]">${n.summary}</p>
   `;
-  modal.classList.remove('hidden');
-  modal.classList.add('flex');
+  document.getElementById('newsModalContent').innerHTML = content;
+  document.getElementById('newsModal').classList.remove('hidden');
+  document.getElementById('newsModal').classList.add('flex');
 }
 
 function closeNewsModal() {
-  const modal = $('#newsModal');
-  modal.classList.add('hidden');
-  modal.classList.remove('flex');
+  document.getElementById('newsModal').classList.add('hidden');
+  document.getElementById('newsModal').classList.remove('flex');
+}
+
+function renderStockList() {
+  const list = document.getElementById('stockList');
+  if (!list) return;
+  const term = state.stockSearch.toLowerCase();
+  const filtered = stocks.filter(s => s.ticker.toLowerCase().includes(term) || s.name.toLowerCase().includes(term));
+  
+  list.innerHTML = filtered.map(s => {
+    return `<div class="p-3 border-b border-[var(--border)] cursor-pointer hover:bg-white/5 transition-colors" onclick="selectChatTicker('${s.ticker}')">
+      <div class="flex items-center justify-between mb-1">
+        <span class="font-bold font-mono text-sm">${s.ticker}</span>
+        <span class="font-mono text-xs ${s.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${fmtPrice(s.price)}</span>
+      </div>
+      <div class="text-[11px] text-[var(--text-secondary)] truncate">${s.name}</div>
+    </div>`;
+  }).join('');
 }
 
 function updateFilters() {
-  const checkboxes = document.querySelectorAll('.signal-filter');
-  state.filters.signals = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
-  state.filters.sector = $('#sectorFilter').value;
+  const cbs = document.querySelectorAll('.signal-filter');
+  state.filters.signals = Array.from(cbs).filter(cb => cb.checked).map(cb => cb.value);
+  state.filters.sector = document.getElementById('sectorFilter').value;
   renderScreener();
 }
 
 function resetFilters() {
   document.querySelectorAll('.signal-filter').forEach(cb => cb.checked = true);
-  $('#sectorFilter').value = '';
+  document.getElementById('sectorFilter').value = '';
   updateFilters();
 }
 
@@ -1469,86 +1485,65 @@ function setScreenerSort(key) {
 }
 
 function renderScreener() {
-  const tbody = $('#screenerBody');
-  const mobileList = $('#screenerMobileList');
-  if (!tbody || !mobileList) return;
-
+  const tbody = document.getElementById('screenerBody');
+  const mList = document.getElementById('screenerMobileList');
+  if (!tbody || !mList) return;
+  
   let filtered = stocks.filter(s => {
-    // FIX 1: Case-insensitive signal matching for the screener logic
-    const signalMatch = state.filters.signals.some(sig => sig.toLowerCase() === s.signal.toLowerCase());
-    const sectorMatch = state.filters.sector === '' || s.sector === state.filters.sector;
-    return signalMatch && sectorMatch;
+    const matchSignal = state.filters.signals.includes(s.signal);
+    const matchSector = state.filters.sector ? s.sector === state.filters.sector : true;
+    return matchSignal && matchSector;
   });
-
+  
   filtered.sort((a, b) => {
     let valA = a[state.screenerSort.key];
     let valB = b[state.screenerSort.key];
-    if (typeof valA === 'string') valA = valA.toLowerCase();
-    if (typeof valB === 'string') valB = valB.toLowerCase();
+    
+    if (state.screenerSort.key === 'signal') {
+      const vals = { 'Strong Buy': 5, 'Buy': 4, 'Hold': 3, 'Sell': 2, 'Strong Sell': 1 };
+      valA = vals[valA] || 0;
+      valB = vals[valB] || 0;
+    }
+    
     if (valA < valB) return state.screenerSort.dir === 'asc' ? -1 : 1;
     if (valA > valB) return state.screenerSort.dir === 'asc' ? 1 : -1;
     return 0;
   });
-
-  $('#resultCount').textContent = filtered.length;
-
-  // FIX 2.2: Added onclick and cursor-pointer to the <tr> element itself for full row clickability
+  
+  const countLabel = document.getElementById('resultCount');
+  if (countLabel) countLabel.textContent = filtered.length;
+  
+  ['ticker', 'sector', 'price', 'change', 'aiScore', 'signal'].forEach(k => {
+    const icon = document.getElementById(`sort-icon-${k}`);
+    if (icon) {
+      icon.innerHTML = state.screenerSort.key === k ? (state.screenerSort.dir === 'asc' ? '↑' : '↓') : '';
+    }
+  });
+  
   tbody.innerHTML = filtered.map(s => {
     const changeColor = s.change >= 0 ? 'text-emerald-400' : 'text-rose-400';
     const scoreColor = s.aiScore >= 80 ? 'text-emerald-400' : s.aiScore >= 60 ? 'text-amber-400' : 'text-rose-400';
-    return `<tr class="border-b border-[var(--border)] hover:bg-white/[0.02] transition-colors cursor-pointer" onclick="selectDashboardStock('${s.ticker}')">
-      <td class="px-4 py-3">
-        <div class="font-mono font-bold text-sm">${s.ticker}</div>
-        <div class="text-[11px] text-[var(--text-tertiary)] truncate max-w-[120px]">${s.name}</div>
-      </td>
+    return `<tr class="border-b border-[var(--border)] hover:bg-white/[0.02] cursor-pointer transition-colors" onclick="selectDashboardStock('${s.ticker}')">
+      <td class="px-4 py-3"><div class="font-mono font-bold text-sm">${s.ticker}</div><div class="text-[10px] text-[var(--text-tertiary)] truncate max-w-[120px]">${s.name}</div></td>
       <td class="px-3 py-3 text-xs text-[var(--text-secondary)]">${s.sector}</td>
       <td class="text-right px-3 py-3 font-mono text-sm">${fmtPrice(s.price)}</td>
       <td class="text-right px-3 py-3 font-mono text-sm ${changeColor}">${s.change >= 0 ? '+' : ''}${s.change.toFixed(2)}</td>
-      <td class="text-center px-3 py-3 font-mono font-bold ${scoreColor}">${s.aiScore}</td>
+      <td class="text-center px-3 py-3"><span class="font-mono text-sm font-bold ${scoreColor}">${s.aiScore}</span></td>
       <td class="text-center px-4 py-3"><span class="${signalClass(s.signal)} text-[10px] px-2 py-1 rounded font-bold whitespace-nowrap">${s.signal.toUpperCase()}</span></td>
     </tr>`;
   }).join('');
-
-  mobileList.innerHTML = filtered.map(s => {
+  
+  mList.innerHTML = filtered.map(s => {
     const changeColor = s.change >= 0 ? 'text-emerald-400' : 'text-rose-400';
-    return `<div class="p-3 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-lg cursor-pointer" onclick="selectDashboardStock('${s.ticker}')">
+    return `<div class="bg-[var(--bg-elevated)] p-3 rounded-lg border border-[var(--border)] cursor-pointer" onclick="selectDashboardStock('${s.ticker}')">
       <div class="flex justify-between items-start mb-2">
-        <div><div class="font-mono font-bold">${s.ticker}</div><div class="text-[10px] text-[var(--text-tertiary)]">${s.name}</div></div>
-        <div class="text-right"><div class="font-mono text-sm">${fmtPrice(s.price)}</div><div class="font-mono text-xs ${changeColor}">${s.change >= 0 ? '+' : ''}${s.changePct.toFixed(2)}%</div></div>
+        <div><div class="font-mono font-bold text-sm">${s.ticker}</div><div class="text-[10px] text-[var(--text-secondary)]">${s.name}</div></div>
+        <div class="text-right"><div class="font-mono text-sm">${fmtPrice(s.price)}</div><div class="font-mono text-xs ${changeColor}">${s.change >= 0 ? '+' : ''}${s.change.toFixed(2)}</div></div>
       </div>
       <div class="flex justify-between items-center mt-3 pt-3 border-t border-[var(--border)]">
         <span class="${signalClass(s.signal)} text-[10px] px-2 py-1 rounded font-bold">${s.signal.toUpperCase()}</span>
-        <div class="text-xs text-[var(--text-secondary)]">Score: <span class="font-mono text-emerald-400 font-bold">${s.aiScore}</span></div>
+        <div class="text-xs text-[var(--text-secondary)]">AI Score: <span class="font-mono font-bold ${s.aiScore >= 80 ? 'text-emerald-400' : 'text-amber-400'}">${s.aiScore}</span></div>
       </div>
-    </div>`;
-  }).join('');
-
-  ['ticker', 'sector', 'price', 'change', 'aiScore', 'signal'].forEach(key => {
-    const icon = document.getElementById(`sort-icon-${key}`);
-    if (icon) {
-      if (state.screenerSort.key === key) {
-        icon.innerHTML = state.screenerSort.dir === 'asc' ? '↑' : '↓';
-      } else {
-        icon.innerHTML = '';
-      }
-    }
-  });
-}
-
-function renderStockList() {
-  const list = $('#stockList');
-  if (!list) return;
-  const q = state.stockSearch.toLowerCase();
-  const filtered = stocks.filter(s => s.ticker.toLowerCase().includes(q) || s.name.toLowerCase().includes(q));
-  list.innerHTML = filtered.map(s => {
-    const isActive = s.ticker === state.selectedStock ? 'bg-emerald-500/10 border-l-2 border-emerald-500' : 'border-l-2 border-transparent hover:bg-white/5';
-    const changeColor = s.change >= 0 ? 'text-emerald-400' : 'text-rose-400';
-    return `<div class="p-3 border-b border-[var(--border)] cursor-pointer transition-colors ${isActive}" onclick="selectChatTicker('${s.ticker}')">
-      <div class="flex items-center justify-between mb-1">
-        <span class="font-mono font-bold text-sm">${s.ticker}</span>
-        <span class="font-mono text-xs ${changeColor}">${s.change >= 0 ? '+' : ''}${s.changePct.toFixed(2)}%</span>
-      </div>
-      <div class="text-[10px] text-[var(--text-tertiary)] truncate">${s.name}</div>
     </div>`;
   }).join('');
 }
@@ -1557,8 +1552,8 @@ function setBillingCycle(cycle) {
   state.billingCycle = cycle;
   document.querySelectorAll('.billing-toggle').forEach(btn => {
     if (btn.dataset.cycle === cycle) {
-      btn.classList.remove('text-[var(--text-secondary)]');
       btn.classList.add('bg-emerald-500/20', 'text-emerald-400');
+      btn.classList.remove('text-[var(--text-secondary)]');
     } else {
       btn.classList.remove('bg-emerald-500/20', 'text-emerald-400');
       btn.classList.add('text-[var(--text-secondary)]');
@@ -1566,32 +1561,40 @@ function setBillingCycle(cycle) {
   });
   
   if (cycle === 'annual') {
-    $('#proPrice').textContent = '$39';
-    $('#proCycle').textContent = '/month, billed annually';
-    $('#instPrice').textContent = '$239';
-    $('#instCycle').textContent = '/month, billed annually';
+    document.getElementById('proPrice').textContent = '$39';
+    document.getElementById('instPrice').textContent = '$239';
+    document.getElementById('proCycle').textContent = '/mo, billed annually';
+    document.getElementById('instCycle').textContent = '/mo, billed annually';
   } else {
-    $('#proPrice').textContent = '$49';
-    $('#proCycle').textContent = '/month';
-    $('#instPrice').textContent = '$299';
-    $('#instCycle').textContent = '/month';
+    document.getElementById('proPrice').textContent = '$49';
+    document.getElementById('instPrice').textContent = '$299';
+    document.getElementById('proCycle').textContent = '/month';
+    document.getElementById('instCycle').textContent = '/month';
   }
 }
 
-// Initialization
+// BUG 1 FIX: Ensure the app auto-initializes the chart on page load safely
 document.addEventListener('DOMContentLoaded', () => {
-  if (window.lucide) lucide.createIcons();
-  switchView('dashboard');
+  const defaultTicker = localStorage.getItem('lastTicker') || state.selectedStock || 'NVDA';
+  
+  // This seamlessly activates the dashboard, fetching data, and rendering the main chart.
+  selectDashboardStock(defaultTicker);
+  
+  // Set up periodic tasks and views
   updateWatchlistBadge();
+  renderTickerTape();
   fetchRealTimeQuotes();
   setInterval(fetchRealTimeQuotes, 60000);
   
-  // Live clock
+  // Live Clock updater
   setInterval(() => {
-    const now = new Date();
-    $('#liveTime').textContent = now.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour12: false }) + ' ET';
+    const timeEl = document.getElementById('liveTime');
+    if (timeEl) {
+      timeEl.textContent = new Date().toLocaleTimeString('en-US', { hour12: false });
+    }
   }, 1000);
 });
+
 </script>
 </body>
 </html>
